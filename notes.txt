@@ -1,0 +1,67 @@
+**********************Debuter avec ELectron et Python *******************
+pip install flask flask_sqlalchemy flask_cors
+
+python -m venv env
+
+.\env\Scripts\activate.bat
+
+creer le fichier app.py
+
+npm init -y
+Installez Electron et Axios:
+Une fois le projet initialisé, installez Electron et Axios :
+
+npm install --save electron axios
+
+Créez un fichier main.js pour configurer l'application Electron :
+
+
+
+
+
+
+your_project/
+│
+├── src/                   # Code source de l'application Electron
+│   ├── main.js            # Fichier principal d'Electron
+│   ├── preload.js         # Script de préchargement d'Electron
+│   ├── index.html         # Fichier HTML principal
+│   ├── renderer/          # Code de l'interface utilisateur (frontend)
+│   │   ├── renderer.js     # Script de rendu principal
+│   │   ├── styles.css      # Fichier CSS pour le style
+│   │   └── components/     # Composants réutilisables (si nécessaire)
+│   └── assets/            # Ressources statiques (images, etc.)
+│
+├── backend/               # Code du backend Flask
+│   ├── app.py             # Point d'entrée de l'application Flask
+│   ├── models.py          # Modèles de base de données (SQLAlchemy)
+│   ├── routes.py          # Routes de l'API
+│   ├── config.py          # Configuration de l'application
+│   ├── requirements.txt    # Dépendances Python
+│   └── database.db        # Fichier de base de données SQLite
+│
+├── .gitignore             # Fichiers à ignorer par Git
+└── README.md              # Documentation du projet
+
+
+npm init -y
+
+npm install electron --save-dev
+
+Configurer package.json pour lancer Electron : Ajoutez ou modifiez le script suivant dans package.json :
+"scripts": {
+    "start": "electron ."
+}
+
+Installer Flask et SQLAlchemy pour DB
+pip install Flask SQLAlchemy
+pip install Flask-Migrate
+
+Initialiser le dépôt de migration : Dans le répertoire backend, exécutez :
+flask db init
+Créer une migration pour le schéma actuel de votre modèle de données :
+flask db migrate -m "Initial migration."
+Appliquer la migration à la base de données, ce qui crée le fichier de base de données SQLite (si celui-ci n'existe pas encore) :
+flask db upgrade
+Répéter les migrations chaque fois que les modèles changent.
+
