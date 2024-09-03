@@ -1,0 +1,4 @@
+Flask==3.0.3
+SQLAlchemy==2.0.31
+# migration vers db
+pip install Flask-Migrate==4.0.7

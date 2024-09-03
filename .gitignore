@@ -1,0 +1,21 @@
+# Environnement virtuel Python
+venv/
+
+# Fichiers de configuration de l'éditeur
+.vscode/
+.idea/
+
+# Fichiers de logs et caches
+*.log
+backend/__pycache__/
+*.py[cod]
+
+# Fichiers de base de données SQLite
+backend/database.db
+
+# Dépendances Node.js
+node_modules/
+
+# Autres fichiers ou dossiers à ignorer
+dist/
+build/
