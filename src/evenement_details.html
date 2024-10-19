@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscptions</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="renderer/bootstrap513.min.css">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="index.html">Assopilot</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">Accueil</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="login.html">Connexion</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="categorie.html">Categorie</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="evenement.html">Evénement</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Gestion des indcriptions</h1>
+
+        <!-- Formulaire d'inscription' -->
+        <div class="card my-4">
+            <div class="card-header">
+                Inscriptions à l'événement
+                <span id="eventName"></span>
+            </div>
+            <div class="card-body">
+                <form id="multipleInscriptionForm">
+                    <div class="mb-3">
+                        <label for="membreSelect" class="form-label">Sélectionner des membres</label>
+                        <select class="form-select" id="membreSelect" multiple required></select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Inscrire les Membres Sélectionnés</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Liste des Membres à inscrire -->
+        <div class="card my-4">
+            <div class="card-heade d-flex justify-content-between align-items-center">
+                <h5>Liste des Membres inscrits à l'événement</h5>
+                <button class="btn btn-primary m-2" onclick="">Ajouter une inscription</button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nom du Membre</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inscriptionTableBody">
+                            <!-- Les inscriptions seront injectées ici via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+            </div>
+        </div>
+
+
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Renderer JS -->
+    <!-- <script src="renderer/renderer.js" defer></script> -->
+    <script defer>
+        (function() {
+            const apiBaseUrl = 'http://localhost:5000/api';
+            let globalEventId = null;
+            const inscriptionTableBody = document.getElementById('inscriptionTableBody');
+            const multipleInscriptionForm = document.getElementById('multipleInscriptionForm');
+            const membreSelect = document.getElementById('membreSelect');
+            let eventId; // Déclarer une variable pour stocker l'ID de l'événement
+    
+            window.addEventListener('DOMContentLoaded', async () => {
+                try {
+                    const eventId = await window.api.getEventId();
+                    // console.log(`ID de l'événement récupéré : ${eventId}`);
+                    if (eventId) {
+                        globalEventId = eventId; // Stocke l'ID dans la variable globale
+                        loadEventDetails(eventId); // Appeler votre fonction avec l'ID de l'événement
+                    } else {
+                        console.error("Erreur : aucun ID d'événement trouvé");
+                        alert("Erreur : aucun ID d'événement trouvé");
+                    }
+                } catch (error) {
+                    console.error("Erreur lors de la récupération de l'ID de l'événement :", error);
+                }
+            });
+
+
+    
+            // Charger les détails de l'événement
+            async function loadEventDetails(id) {
+                if (!id) {
+                    console.error("Erreur : l'ID de l'événement n'a pas été trouvé.");
+                    return;
+                }
+                try {
+                    const response = await fetch(`${apiBaseUrl}/evenement/${id}/details`);
+                    if (!response.ok) {
+                        throw new Error("Erreur lors du chargement des détails de l'événement");
+                    }
+                    const event = await response.json();
+                    document.getElementById('eventName').textContent = event.nom;
+                    loadInscriptions();
+                    loadAvailableMembres();
+                } catch (error) {
+                    console.error("Erreur:", error);
+                    alert("Une erreur s'est produite lors du chargement des détails de l'événement.");
+                }
+            }
+    
+            // Charger les inscriptions de l'événement
+            async function loadInscriptions() {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/inscriptions?evenement_id=${globalEventId}`);
+                    if (!response.ok) {
+                        throw new Error("Erreur lors du chargement des inscriptions");
+                    }
+    
+                    const inscriptions = await response.json();
+                    inscriptionTableBody.innerHTML = ''; // Nettoyer le tableau avant de le remplir
+    
+                    inscriptions.forEach(inscription => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${inscription.id}</td>
+                            <td>${inscription.membre.fullname}</td>
+                            <td>${inscription.en_liste_attente ? 'En liste d\'attente' : 'Validée'}</td>
+                            <td>
+                                ${inscription.en_liste_attente ? `<button class="btn btn-success btn-sm" data-inscription-id="${inscription.id}">Valider</button>` : ''}
+                                <button class="btn btn-warning btn-sm" data-inscription-id="${inscription.id}">Supprimer</button>
+                            </td>
+                        `;
+                        inscriptionTableBody.appendChild(row);
+                    });
+
+                    // Gestion des événements pour chaque bouton de validation
+                    document.querySelectorAll('.btn-success').forEach(button => {
+                        button.addEventListener('click', async (event) => {
+                            const inscriptionId = event.currentTarget.getAttribute('data-inscription-id');
+                            await validateInscription(inscriptionId);
+                        });
+                    });
+
+                    // Fonction pour valider une inscription
+                    async function validateInscription(inscriptionId) {
+                        try {
+                            const response = await fetch(`${apiBaseUrl}/inscriptions/${inscriptionId}/valider`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+
+                            if (!response.ok) {
+                                const errorData = await response.json();
+                                throw new Error(errorData.message);
+                            }
+
+                            alert("Inscription validée avec succès.");
+                            // Recharger les inscriptions après validation
+                            await loadInscriptions();
+                        } catch (error) {
+                            // console.error("Erreur:", error);
+                            alert(error);
+                        }   
+                    }
+
+    
+                    // Gestion des événements pour chaque bouton de suppression
+                    document.querySelectorAll('.btn-warning').forEach(button => {
+                        button.addEventListener('click', async (event) => {
+                            const inscriptionId = event.currentTarget.getAttribute('data-inscription-id');
+                            await removeInscription(inscriptionId);
+                        });
+                    });
+                } catch (error) {
+                    console.error("Erreur:", error);
+                    alert("Une erreur s'est produite lors du chargement des inscriptions.");
+                }
+            }
+    
+            // Charger les membres non inscrits à cet événement
+            async function loadAvailableMembres() {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/membres_non_inscrits?evenement_id=${globalEventId}`);
+                    if (!response.ok) {
+                        throw new Error("Erreur lors du chargement des membres disponibles");
+                    }
+    
+                    const membres = await response.json();
+                    membreSelect.innerHTML = membres.map(membre => `<option value="${membre.id}">${membre.fullname}</option>`).join('');
+                    membreSelect.addEventListener('change', handleMemberSelection);
+                } catch (error) {
+                    console.error("Erreur:", error);
+                    alert("Une erreur s'est produite lors du chargement des membres disponibles.");
+                }
+            }
+    
+            // Gérer la sélection de membres pour éviter les doublons
+            function handleMemberSelection() {
+                const selectedOptions = Array.from(membreSelect.selectedOptions);
+                const selectedValues = selectedOptions.map(option => option.value);
+    
+                Array.from(membreSelect.options).forEach(option => {
+                    option.disabled = selectedValues.includes(option.value);
+                });
+            }
+    
+            // Inscrire plusieurs membres à l'événement
+            multipleInscriptionForm.onsubmit = async function(event) {
+                event.preventDefault();
+                const selectedOptions = Array.from(membreSelect.selectedOptions);
+                const membreIds = selectedOptions.map(option => option.value);
+    
+                if (membreIds.length === 0) {
+                    alert("Veuillez sélectionner au moins un membre.");
+                    return;
+                }
+    
+                try {
+                    const response = await fetch(`${apiBaseUrl}/inscriptions/multiple`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ evenement_id: globalEventId, membre_ids: membreIds })
+                    });
+    
+                    const result = await response.json();
+                    if (response.ok) {
+                        alert("Membres inscrits avec succès.");
+                        loadInscriptions();
+                        loadAvailableMembres();
+                    } else {
+                        alert(result.error);
+                    }
+                } catch (error) {
+                    console.error("Erreur:", error);
+                    alert("Une erreur s'est produite lors de l'inscription des membres.");
+                }
+            };
+    
+            // Fonction pour supprimer une inscription
+            async function removeInscription(inscriptionId) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/inscriptions/${inscriptionId}`, {
+                        method: 'DELETE'
+                    });
+    
+                    if (!response.ok) {
+                        throw new Error("Erreur lors de la suppression de l'inscription");
+                    }
+    
+                    alert("Inscription supprimée.");
+                    loadInscriptions(); // Recharger les inscriptions après la suppression
+                } catch (error) {
+                    console.error("Erreur:", error);
+                    alert("Une erreur s'est produite lors de la suppression de l'inscription.");
+                }
+            }
+        })();
+    </script>
+    
+</body>
+</html>

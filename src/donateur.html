@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Membres, Catégories et Administrateurs</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="renderer/bootstrap513.min.css">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="index.html">Assopilot</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">Accueil</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="login.html">Connexion</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="categorie.html">Categorie</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="evenement.html">Evénement</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Gestion des Donateurs</h1>
+
+        <!-- Modal pour ajouter / modifier un donateur -->
+        <div class="modal fade" id="donateurModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitle">Ajouter un Donateur</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="donateurForm">
+                            <input type="hidden" id="donateurId">
+                            <div class="mb-3">
+                                <label for="donateurNom" class="form-label">Nom</label>
+                                <input type="text" class="form-control" id="donateurNom" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="donateurPrenom" class="form-label">Prénom</label>
+                                <input type="text" class="form-control" id="donateurPrenom" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="donateurEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="donateurEmail" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="donateurTelephone" class="form-label">Téléphone</label>
+                                <input type="text" class="form-control" id="donateurTelephone">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Enregistrer</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Liste des Membres -->
+        <div class="card my-4">
+            <div class="card-heade d-flex justify-content-between align-items-center">
+                <h5>Liste des Membres</h5>
+                <button class="btn btn-primary m-2" onclick="window.api.showStatutModal()">Ajouter un Statut</button>
+                <button class="btn btn-primary m-2" onclick="window.api.showCategorieModal()">Ajouter une Catégorie</button>
+                <button class="btn btn-primary m-2" onclick="window.api.showAddDonateurModal()">Ajouter un Donateur</button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Prénom</th>
+                                <th>Email</th>
+                                <th>Téléphone</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="donateursTable">
+                            <!-- Les donateurs seront chargés ici dynamiquement -->
+                        </tbody>
+                    </table>
+                </div>
+                
+            </div>
+        </div>
+
+
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Renderer JS -->
+    <!-- <script src="renderer/renderer.js" defer></script> -->
+    <script defer>
+        (function () {
+            const apiBaseUrl = 'http://localhost:5000/api';
+
+            // Fonction pour charger tous les donateurs
+            async function loadDonateurs() {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/donateurs`);
+                    const donateurs = await response.json();
+                    const tableBody = document.getElementById('donateursTable');
+                    tableBody.innerHTML = '';
+
+                    donateurs.forEach(donateur => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${donateur.nom}</td>
+                            <td>${donateur.prenom}</td>
+                            <td>${donateur.email}</td>
+                            <td>${donateur.telephone}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="window.api.loadDonateurForUpdate(${donateur.id})">Modifier</button>
+                                <button class="btn btn-danger btn-sm" onclick="window.api.deactivateDonateur(${donateur.id})">Désactiver</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error('Erreur lors du chargement des donateurs:', error);
+                }
+            }
+
+            // Fonctions utilitaires pour ouvrir et fermer le modal
+            function showAddDonateurModal() {
+                const modalElement = document.getElementById('donateurModal');
+                document.getElementById('modalTitle').innerText = 'Ajouter un Donateur';
+                const modal = new bootstrap.Modal(modalElement, {
+                    backdrop: 'static',
+                    keyboard: false     
+                });
+                modal.show();
+            }
+
+            // Fonction pour charger un donateur dans le formulaire pour modification
+            async function loadDonateurForUpdate(id) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/donateurs/${id}`);
+                    const donateur = await response.json();
+                    document.getElementById('donateurId').value = donateur.id;
+                    document.getElementById('donateurNom').value = donateur.nom;
+                    document.getElementById('donateurPrenom').value = donateur.prenom;
+                    document.getElementById('donateurEmail').value = donateur.email;
+                    document.getElementById('donateurTelephone').value = donateur.telephone;
+                    const modalElement = document.getElementById('donateurModal');
+                    document.getElementById('modalTitle').innerText = 'Modifier un Donateur';
+                    // new bootstrap.Modal(document.getElementById('donateurModal')).show();
+                    new bootstrap.Modal(modalElement, {
+                        backdrop: 'static',
+                        keyboard: false     
+                    }).show();
+                } catch (error) {
+                    console.error('Erreur lors du chargement du donateur:', error);
+                }
+            }
+
+            // Fonction pour ajouter ou mettre à jour un donateur
+            async function saveDonateur(event) {
+                event.preventDefault();
+                const id = document.getElementById('donateurId').value;
+                const nom = document.getElementById('donateurNom').value;
+                const prenom = document.getElementById('donateurPrenom').value;
+                const email = document.getElementById('donateurEmail').value;
+                const telephone = document.getElementById('donateurTelephone').value;
+
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `${apiBaseUrl}/donateurs/${id}` : `${apiBaseUrl}/donateurs`;
+
+                try {
+                    await fetch(url, {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nom, prenom, email, telephone })
+                    });
+                    document.getElementById('donateurForm').reset();
+                    document.getElementById('donateurId').value = '';
+                    bootstrap.Modal.getInstance(document.getElementById('donateurModal')).hide();
+                    loadDonateurs();
+                } catch (error) {
+                    console.error('Erreur lors de la sauvegarde du donateur:', error);
+                }
+            }
+
+            // Fonction pour désactiver un donateur
+            async function deactivateDonateur(id) {
+                try {
+                    await fetch(`${apiBaseUrl}/donateurs/${id}`, { method: 'DELETE' });
+                    loadDonateurs();
+                } catch (error) {
+                    console.error('Erreur lors de la désactivation du donateur:', error);
+                }
+            }
+
+            // Fonction pour réactiver un donateur
+            async function reactivateDonateur(id) {
+                try {
+                    await fetch(`${apiBaseUrl}/donateurs/${id}/reactivate`, { method: 'PUT' });
+                    loadDonateurs();
+                } catch (error) {
+                    console.error('Erreur lors de la réactivation du donateur:', error);
+                }
+            }
+
+            // Initialisation des événements et chargement initial des donateurs
+            document.getElementById('donateurForm').addEventListener('submit', saveDonateur);
+            window.api = {
+                showAddDonateurModal,
+                loadDonateurForUpdate,
+                deactivateDonateur,
+                reactivateDonateur
+            };
+            loadDonateurs();
+        })();
+    </script>
+</body>
+</html>

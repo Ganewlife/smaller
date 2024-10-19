@@ -1,5 +1,6 @@
 # Environnement virtuel Python
 venv/
+env/
 
 # Fichiers de configuration de l'éditeur
 .vscode/
@@ -12,6 +13,7 @@ backend/__pycache__/
 
 # Fichiers de base de données SQLite
 backend/database.db
+backend/assopilot.db
 
 # Dépendances Node.js
 node_modules/
@@ -19,3 +21,5 @@ node_modules/
 # Autres fichiers ou dossiers à ignorer
 dist/
 build/
+
+notes.txt

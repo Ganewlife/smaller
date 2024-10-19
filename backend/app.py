@@ -11,7 +11,8 @@ app.config.from_object('config.Config')
 db.init_app(app)
 migrate = Migrate(app, db)
 
-app.register_blueprint(main)
+# app.register_blueprint(main)
+app.register_blueprint(main, url_prefix='/api')
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -65,3 +65,172 @@ Appliquer la migration à la base de données, ce qui crée le fichier de base d
 flask db upgrade
 Répéter les migrations chaque fois que les modèles changent.
 
+cd backend
+flask rendu
+
+npm start
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=====================================================Techniques ======================
+# Relation avec Membre
+membres = db.relationship('Membre', backref='statut', lazy=True)
+Explication de la Ligne membres = db.relationship('Membre', backref='statut', lazy=True)
+Cette ligne crée une relation entre le modèle Statut et le modèle Membre. Voici l'explication détaillée :
+
+membres = db.relationship('Membre', backref='statut', lazy=True) :
+db.relationship : Crée une relation entre deux tables (dans ce cas, Statut et Membre).
+'Membre' : Cela indique que chaque Statut peut être lié à plusieurs instances de Membre. En d'autres termes, un statut (comme "Actif") peut être attribué à plusieurs membres.
+backref='statut' : Crée une propriété inverse dans le modèle Membre. Cela signifie que chaque instance de Membre aura un attribut appelé statut qui renverra l'instance de Statut associée à ce membre. Par exemple, si un membre a un statut "Actif", vous pourrez y accéder via membre.statut.
+lazy=True : Cette option détermine la façon dont SQLAlchemy charge les objets liés.
+lazy=True signifie que les objets liés (dans ce cas, les membres) ne sont chargés que lorsque vous y accédez pour la première fois, au lieu de les charger automatiquement en même temps que l'objet parent (le statut).
+Concrètement, cette ligne permet :
+Depuis Statut : Vous pouvez accéder à tous les membres qui ont un statut particulier, comme ceci :
+
+python
+Copier le code
+statut_actif = Statut.query.filter_by(nom="Actif").first()
+for membre in statut_actif.membres:
+    print(membre.nom)
+Ici, statut_actif.membres renvoie tous les membres qui ont le statut "Actif".
+
+Depuis Membre : Vous pouvez accéder au statut d'un membre particulier, comme ceci :
+
+python
+Copier le code
+membre = Membre.query.get(1)
+print(membre.statut.nom)  # Affiche le nom du statut du membre
+Ici, membre.statut renvoie l'instance du statut associé au membre
+
+
+
+___________________________ Questions de details____________________________
+Pour participer à un evenement, l'inscription est elle obligatoire ?
+
+Pour les evenements recurrrentes, ( il y aura plusieurs articipation),
+ si oui: comment marquer la distinction pour les participations
+
+
+ Projet:
+
+Nouveau : Le projet est créé, mais aucune tâche n'a été assignée ou démarrée.
+En cours : Des tâches ont commencé et le projet progresse.
+Terminé : Toutes les tâches sont terminées et le projet est clôturé.
+En attente : Le projet est en pause pour diverses raisons.
+Tâche:
+
+À faire : La tâche est définie, mais pas encore commencée.
+En cours : La tâche est en cours de réalisation.
+Terminée : La tâche est finalisée.
+Bloquée : La tâche rencontre des obstacles ou dépend d'une autre tâche ou action.
+Revue : La tâche est en cours d'évaluation ou de validation.
+
+
+
+
+
+
+
+
+
+
+
+L'erreur que vous rencontrez indique qu'il y a un problème avec la déclaration de votre clé étrangère dans vos modèles SQLAlchemy. Plus précisément, il semble que vous essayez de spécifier un argument (`nullable`) qui n'est pas accepté dans le contexte où vous l'utilisez. Voici quelques étapes pour résoudre ce problème :
+
+### 1. Vérifiez la déclaration de vos clés étrangères
+
+Assurez-vous que vos clés étrangères sont correctement définies dans vos classes. Par exemple, dans la classe `Inscription`, vous devriez définir vos relations de manière similaire à ceci :
+
+```python
+class Inscription(BaseModel):
+    __tablename__ = 'inscriptions'
+
+    # Déclaration des colonnes
+    membre_id = db.Column(db.Integer, db.ForeignKey('membres.id'), nullable=False)
+    evenement_id = db.Column(db.Integer, db.ForeignKey('evenements.id'), nullable=False)
+    date_inscription = db.Column(db.DateTime, default=datetime.utcnow)
+    en_liste_attente = db.Column(db.Boolean, default=True)
+
+    # Relation
+    participations = db.relationship('Participation', backref='inscription', lazy=True)
+```
+
+### 2. Revérifiez les relations et les clés étrangères
+
+Assurez-vous que vous n'avez pas de doublons dans vos classes. Par exemple, ne déclarez pas plusieurs fois une clé étrangère pour la même colonne. Vous devriez également vous assurer que les tables que vous faites référence dans vos clés étrangères existent et qu'elles sont définies avant que vous n'ayez besoin d'y faire référence.
+
+### 3. Vérifiez les imports
+
+Vérifiez que vous avez bien importé les bonnes classes et fonctions depuis SQLAlchemy :
+
+```python
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
+```
+
+### 4. Vérifiez l'ordre de déclaration
+
+Assurez-vous que toutes les classes (comme `Membre`, `Evenement`, etc.) sont définies avant que vous ne les référenciez dans d'autres classes.
+
+### 5. Exemple de définition correcte
+
+Voici un exemple d'une structure de classe correcte :
+
+```python
+class Membre(BaseModel):
+    __tablename__ = 'membres'
+    
+    nom = db.Column(db.String(100), nullable=False)
+    prenom = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    telephone = db.Column(db.String(20))
+
+    inscriptions = db.relationship('Inscription', backref='membre', lazy=True)
+
+class Evenement(BaseModel):
+    __tablename__ = 'evenements'
+    
+    nom = db.Column(db.String(100), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    lieu = db.Column(db.String(200), nullable=False)
+    
+    inscriptions = db.relationship('Inscription', backref='evenement', lazy=True)
+
+class Inscription(BaseModel):
+    __tablename__ = 'inscriptions'
+
+    membre_id = db.Column(db.Integer, db.ForeignKey('membres.id'), nullable=False)
+    evenement_id = db.Column(db.Integer, db.ForeignKey('evenements.id'), nullable=False)
+    date_inscription = db.Column(db.DateTime, default=datetime.utcnow)
+    en_liste_attente = db.Column(db.Boolean, default=True)
+```
+
+### 6. Migration de la base de données
+
+Si vous avez modifié vos modèles, assurez-vous de créer une nouvelle migration pour mettre à jour votre base de données avec :
+
+```bash
+flask db migrate -m "Message de migration"
+flask db upgrade
+```
+
+### Conclusion
+
+Suivez ces étapes pour identifier et résoudre le problème. Si l'erreur persiste, partagez vos définitions de classes pertinentes, et je pourrai vous aider à affiner le problème.

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Evenements</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="renderer/bootstrap513.min.css">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="index.html">Assopilot</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">Accueil</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="login.html">Connexion</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="membre.html">Membres</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="categorie.html">Categorie</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="donateur.html">Donateur</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Gestion des Evenements</h1>
+
+        <!-- Modal pour ajouter un événement -->
+        <div class="modal fade" id="evenementModal" tabindex="-1" aria-labelledby="evenementModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="evenementModalLabel">Planifier un événement</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="evenementForm">
+                            <div class="modal-body">
+                                <input type="hidden" id="evenementId">
+                                <div class="mb-3">
+                                    <label for="evenementNom" class="form-label">Nom de l'Événement</label>
+                                    <input type="text" class="form-control" id="evenementNom" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="evenementDate" class="form-label">Date</label>
+                                    <input type="date" class="form-control" id="evenementDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="evenementLieu" class="form-label">Lieu</label>
+                                    <input type="text" class="form-control" id="evenementLieu" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="evenementNbParticipantsMax" class="form-label">Nombre de Participants Max</label>
+                                    <input type="number" class="form-control" id="evenementNbParticipantsMax" value="100" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="evenementEstRecurrent" class="form-label">L'événement est-il récurrent ?</label>
+                                    <select class="form-control" id="evenementEstRecurrent">
+                                        <option value="false">Non</option>
+                                        <option value="true">Oui</option>
+                                    </select>
+                                </div>                    
+                                <div class="mb-3">
+                                    <label for="evenementRecurrenceDetails" class="form-label">Détails de la récurrence</label>
+                                    <input type="text" class="form-control" id="evenementRecurrenceDetails">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal pour définir la récurrence -->
+        <div class="modal fade" id="modalRecurrence" tabindex="-1" aria-labelledby="modalRecurrenceLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalRecurrenceLabel">Définir la récurrence de l'événement</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="recurrenceForm">
+                            <input type="hidden" id="eventId">
+                            <div id="recurrenceOptions">
+                                <div class="form-group">
+                                    <label for="typeRecurrence">Type de récurrence</label>
+                                    <select class="form-control" id="typeRecurrence">
+                                        <option value="quotidienne">Quotidienne</option>
+                                        <option value="hebdomadaire">Hebdomadaire</option>
+                                        <option value="mensuelle">Mensuelle</option>
+                                        <option value="annuelle">Annuelle</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" id="jourSemaineOption" style="display: none;">
+                                    <label for="jourSemaine">Jour de la semaine</label>
+                                    <select class="form-control" id="jourSemaine">
+                                        <option value="lundi">Lundi</option>
+                                        <option value="mardi">Mardi</option>
+                                        <option value="mercredi">Mercredi</option>
+                                        <option value="jeudi">Jeudi</option>
+                                        <option value="vendredi">Vendredi</option>
+                                        <option value="samedi">Samedi</option>
+                                        <option value="dimanche">Dimanche</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" id="jourMoisOption" style="display: none;">
+                                    <label for="jourMois">Jour du mois</label>
+                                    <input type="text" class="form-control" id="jourMois" pattern="\d*" oninput="validateNumber(this)" placeholder="Entrez un jour (1-31)">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Liste des Evenements -->
+        <div class="card my-4">
+            <div class="card-heade d-flex justify-content-between align-items-center">
+                <h5>Liste des Membres</h5>
+                <button class="btn btn-primary m-2" onclick="window.api.showAddEvenementModal()">Planifier un Événement</button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Date</th>
+                                <th>Lieu</th>
+                                <th>Nb Participants Max</th>
+                                <th>Est Récurrent</th>
+                                <th>Détails Récurrence</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="evenementsTableBody">
+                            <!-- Les lignes d'événements seront insérées ici par JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+            </div>
+        </div>
+
+
+    </div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Renderer JS -->
+    <!-- <script src="renderer/renderer.js" defer></script> -->
+    <script defer>
+        const apiBaseUrl = 'http://localhost:5000/api';
+        (function() {
+            const { ipcRenderer } = require('electron');
+            async function validateNumber(input) {
+                const value = input.value;
+
+                // Si la valeur n'est pas un nombre ou dépasse 31, on réinitialise la valeur
+                if (!/^\d+$/.test(value) || parseInt(value, 10) > 31) {
+                    input.value = value.slice(0, -1);
+                }
+            }
+
+            // Fonctions utilitaires pour ouvrir et fermer le modal
+            function showAddEvenementModal(evenement = {}) {
+                const modalElement = document.getElementById('evenementModal');
+                document.getElementById('evenementModalLabel').innerText = 'Planifier un Evénement';
+                const modal = new bootstrap.Modal(modalElement, {
+                    backdrop: 'static',
+                    keyboard: false     
+                });
+                modal.show();
+            }
+
+            const estRecurrentSelect = document.getElementById('evenementEstRecurrent');
+            const typeRecurrenceSelect = document.getElementById('typeRecurrence');
+            const recurrenceOptionsDiv = document.getElementById('recurrenceOptions');
+            const jourSemaineOption = document.getElementById('jourSemaineOption');
+            const jourMoisOption = document.getElementById('jourMoisOption');
+
+            estRecurrentSelect.addEventListener('change', function() {
+                if (this.value === "true") {
+                    recurrenceOptionsDiv.style.display = 'block';
+                } else {
+                    recurrenceOptionsDiv.style.display = 'none';
+                    jourSemaineOption.style.display = 'none';
+                    jourMoisOption.style.display = 'none';
+                }
+            });
+
+            typeRecurrenceSelect.addEventListener('change', function() {
+                if (this.value === 'hebdomadaire') {
+                    jourSemaineOption.style.display = 'block';
+                    jourMoisOption.style.display = 'none';
+                } else if (this.value === 'mensuelle') {
+                    jourSemaineOption.style.display = 'none';
+                    jourMoisOption.style.display = 'block';
+                } else {
+                    jourSemaineOption.style.display = 'none';
+                    jourMoisOption.style.display = 'none';
+                }
+            });
+
+            // Fonction pour enregistrer un événement
+            async function saveEvenement(event) {
+                event.preventDefault();
+
+                const id = document.getElementById('evenementId').value;
+                const nom = document.getElementById('evenementNom').value;
+                const date = document.getElementById('evenementDate').value;
+                const lieu = document.getElementById('evenementLieu').value;
+                const nbParticipantsMax = document.getElementById('evenementNbParticipantsMax').value;
+                const estRecurrent = document.getElementById('evenementEstRecurrent').value === 'true';
+                const recurrenceDetails = document.getElementById('evenementRecurrenceDetails').value;
+
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `${apiBaseUrl}/evenements/${id}` : `${apiBaseUrl}/evenements`;
+
+                try {
+                    await fetch(url, {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nom, date, lieu, nb_participants_max: nbParticipantsMax, est_recurrent: estRecurrent, recurrence_details: recurrenceDetails })
+                    });
+                    document.getElementById('evenementForm').reset();
+                    document.getElementById('evenementId').value = '';
+                    bootstrap.Modal.getInstance(document.getElementById('evenementModal')).hide();
+                    loadEvenements();
+                } catch (error) {
+                    console.error('Erreur lors de la sauvegarde de l\'événement:', error);
+                }
+            }
+
+             // Fonction pour afficher modal de definition de de réccurrence
+            async function recurrenceEvenement(id){
+                try {
+                    const response = await fetch(`${apiBaseUrl}/evenements/${id}`);
+                    const evenement = await response.json();
+
+                    document.getElementById('eventId').value = evenement.id;
+                    new bootstrap.Modal(document.getElementById('modalRecurrence'), {
+                        backdrop: 'static',
+                        keyboard: false     
+                    }).show();
+                }catch (error) {
+                    console.error('Erreur lors du chargement de l\'événement:', error);
+                }
+            };
+
+
+            // Définir la récurrence d'un événement 
+            async function saveRecurrenceEvenement(event) {
+                event.preventDefault();
+                
+                const id = document.getElementById('eventId').value;
+                const typeRecurrence = document.getElementById('typeRecurrence').value;
+                const jourSemaine = document.getElementById('jourSemaine').value;
+                const jourMois = document.getElementById('jourMois').value;
+
+                const data = {
+                    type_recurrence: typeRecurrence,
+                };
+
+                if (typeRecurrence === 'hebdomadaire') {
+                    data.jour_semaine = jourSemaine;
+                } else if (typeRecurrence === 'mensuelle') {
+                    data.jour_mois = jourMois;
+                }
+
+                const url = `${apiBaseUrl}/evenements/${id}/recurrence`;
+
+                try {
+                    await fetch(url, {
+                        method: "PUT", 
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+
+                    document.getElementById('recurrenceForm').reset();
+                    document.getElementById('eventId').value = '';
+                    bootstrap.Modal.getInstance(document.getElementById('modalRecurrence')).hide();
+                    loadEvenements();
+                } catch (error) {
+                    console.error('Erreur:', error);
+                    alert('Erreur lors de la définition de la récurrence.');
+                }
+            }
+
+
+            // Fonction pour charger les informations d'un événement pour modification
+            async function loadEvenementForUpdate(id) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/evenements/${id}`);
+                    const evenement = await response.json();
+
+                    document.getElementById('evenementId').value = evenement.id;
+                    document.getElementById('evenementNom').value = evenement.nom;
+                    document.getElementById('evenementDate').value = evenement.date;
+                    document.getElementById('evenementLieu').value = evenement.lieu;
+                    document.getElementById('evenementNbParticipantsMax').value = evenement.nb_participants_max;
+                    const selectEstRecurrent = document.getElementById('evenementEstRecurrent');
+                    selectEstRecurrent.value = evenement.est_recurrent ? 'true' : 'false';
+                    document.getElementById('evenementRecurrenceDetails').value = evenement.recurrence_details || '';
+
+                    document.getElementById('evenementModalLabel').innerText = 'Modifier un événement';
+                    new bootstrap.Modal(document.getElementById('evenementModal'), {
+                        backdrop: 'static',
+                        keyboard: false     
+                    }).show();
+                } catch (error) {
+                    console.error('Erreur lors du chargement de l\'événement:', error);
+                }
+            }
+
+
+            // Fonction pour pour appeler la fenetre de details d'un evenement
+            document.addEventListener('click', (event) => {
+                if (event.target.classList.contains('details-btn')) {
+                    const evenementId = event.target.getAttribute('data-id');
+                    console.log(`ID de l'événement récupéré : ${evenementId}`);
+                    // Envoyer un message à main.js pour ouvrir la fenêtre des détails
+                    ipcRenderer.send('open-event-details', evenementId);
+                }
+            });
+
+            // Fonction pour charger les événements au démarrage
+            async function loadEvenements() {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/evenements`);
+                    const evenements = await response.json();
+                    displayEvenements(evenements);
+                } catch (error) {
+                    console.error('Erreur lors du chargement des événements:', error);
+                }
+            }
+
+            // Fonction pour afficher les événements dans une table
+            function displayEvenements(evenements) {
+                const tableBody = document.getElementById('evenementsTableBody');
+                tableBody.innerHTML = '';
+                evenements.forEach(evenement => {
+                    const row = `
+                        <tr>
+                            <td>${evenement.nom}</td>
+                            <td>${evenement.date}</td>
+                            <td>${evenement.lieu}</td>
+                            <td>${evenement.nb_participants_max}</td>
+                            <td>${evenement.est_recurrent ? 'Oui' : 'Non'}</td>
+                            <td>${evenement.recurrence_details}</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" onclick="window.api.loadEvenementForUpdate(${evenement.id})">Modifier</button>
+                                <button class="btn btn-danger btn-sm" onclick="window.api.deleteEvenement(${evenement.id})">Supprimer</button>
+                                ${evenement.est_recurrent ? `
+                                <button class="btn btn-sm btn-secondary" onclick="window.api.recurrenceEvenement(${evenement.id})">Récurrence</button>` : ''}
+                                <button class="details-btn" data-id="${evenement.id}">Détails</button>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+            }
+
+            // Fonction pour supprimer un événement
+            async function deleteEvenement(id) {
+                try {
+                    await fetch(`${apiBaseUrl}/evenements/${id}`, { method: 'DELETE' });
+                    loadEvenements();
+                } catch (error) {
+                    console.error('Erreur lors de la suppression de l\'événement:', error);
+                }
+            }
+
+            document.getElementById('evenementForm').addEventListener('submit', saveEvenement);
+            document.getElementById('recurrenceForm').addEventListener('submit', saveRecurrenceEvenement);
+
+            // Enregistrement des fonctions dans window.api pour les rendre accessibles globalement
+            window.api = {
+                showAddEvenementModal,
+                deleteEvenement,
+                loadEvenementForUpdate,
+                recurrenceEvenement
+            };
+            loadEvenements()
+            // validation de valeur de jour du mois
+            window.validateNumber = validateNumber;
+        })();
+    </script>
+</body>
+</html>

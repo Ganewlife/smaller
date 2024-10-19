@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="renderer/bootstrap513.min.css">
+    <title>Tableau de bord - Assopilot</title>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="index.html">Accueil</a></li>
+                <li><a href="login.html">Connexion</a></li>
+                <li><a href="dashboard.html">Tableau de bord</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Tableau de bord</h2>
+        <p>Bienvenue, Admin ! Voici un aperçu de l'application.</p>
+        
+        <section>
+            <h3>Statistiques</h3>
+            <ul>
+                <li>Nombre total de membres : <span id="total-membres"></span></li>
+                <li>Nombre total d'événements : <span id="total-evenements"></span></li>
+                <li>Nombre total de cotisations : <span id="total-cotisations"></span></li>
+            </ul>
+        </section>
+        
+        <section>
+            <h3>Actions rapides</h3>
+            <button id="viewMembersBtn">Voir les membres</button>
+            <button id="viewEventsBtn">Voir les événements</button>
+            <button id="viewCotisationsBtn">Voir les cotisations</button>
+        </section>
+    </main>
+
+    <script src="assets/renderer.js"></script>
+</body>
+</html>

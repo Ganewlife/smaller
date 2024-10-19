@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Membres, Catégories et Administrateurs</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"> -->
+    <link rel="stylesheet" href="renderer/bootstrap513.min.css">
+    
+    <!-- Toastr CSS -->
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css"/> -->
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="index.html">Assopilot</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">Accueil</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="login.html">Connexion</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="membre.html">Membres</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Gestion des Membres, Catégories et Statuts</h1>
+
+        <h2>Gestion des Statuts</h2>
+        <div class="card my-4">
+            <div class="card-header">Liste des Statuts</div>
+            <div class="card-body">
+                <button class="btn btn-primary my-3" onclick="window.api.showModal()">Ajouter un Statut</button>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statutsTable">
+                        <!-- Statuts chargés dynamiquement ici -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal pour ajouter/mettre à jour un statut -->
+        <div id="statutModal" class="modal fade" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Ajouter un Statut</h5>
+                        <button type="button" class="btn-close" onclick="window.api.closeModal()"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="statutForm">
+                            <input type="hidden" id="statutId">
+                            <div class="mb-3">
+                                <label for="statutName" class="form-label">Nom du Statut</label>
+                                <input type="text" class="form-control" id="statutName" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Enregistrer</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- <script src="renderer.js"></script> -->
+        
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Renderer JS -->
+    <!-- <script src="renderer/renderer.js" defer></script> -->
+    <script>
+        (() => {
+            const apiBaseUrl = 'http://localhost:5000/api'; // Remplace avec l'URL de ton backend Flask
+    
+            // Fonction pour charger tous les statuts
+            async function loadStatuts() {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/allstatuts`);
+                    const statuts = await response.json();
+                    const tableBody = document.getElementById('statutsTable');
+                    tableBody.innerHTML = '';
+    
+                    statuts.forEach(statut => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${statut.nom}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm" onclick="window.api.loadStatutForUpdate(${statut.id})">Modifier</button>
+                                <button class="btn btn-danger btn-sm" onclick="window.api.deactivateStatut(${statut.id})">Désactiver</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } catch (error) {
+                    console.error('Erreur lors du chargement des statuts:', error);
+                }
+            }
+    
+            // Fonction pour ajouter ou mettre à jour un statut
+            async function saveStatut(event) {
+                event.preventDefault();
+                const id = document.getElementById('statutId').value;
+                const nom = document.getElementById('statutName').value;
+    
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `${apiBaseUrl}/statuts/${id}` : `${apiBaseUrl}/statuts`;
+    
+                try {
+                    await fetch(url, {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nom })
+                    });
+                    closeModal();
+                    loadStatuts();
+                } catch (error) {
+                    console.error('Erreur lors de la sauvegarde du statut:', error);
+                }
+            }
+    
+            // Fonction pour charger un statut dans le formulaire pour modification
+            async function loadStatutForUpdate(id) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/statuts/${id}`);
+                    const statut = await response.json();
+                    document.getElementById('statutId').value = statut.id;
+                    document.getElementById('statutName').value = statut.nom;
+                    showModal();
+                } catch (error) {
+                    console.error('Erreur lors du chargement du statut:', error);
+                }
+            }
+    
+            // Fonction pour désactiver un statut
+            async function deactivateStatut(id) {
+                const confirmation = confirm("Êtes-vous sûr de vouloir désactiver ce statut ?");
+                if (!confirmation) {
+                    return;
+                }
+                try {
+                    const response = await fetch(`${apiBaseUrl}/statuts/${id}`, { method: 'DELETE' });
+    
+                    if (!response.ok) {
+                        throw new Error('Erreur lors de la désactivation du statut');
+                    }
+    
+                    loadStatuts();
+                } catch (error) {
+                    console.error('Erreur lors de la désactivation du statut:', error);
+                    alert('Une erreur est survenue lors de la désactivation du statut.');
+                }
+            }
+    
+            // Fonctions utilitaires pour ouvrir et fermer le modal avec Bootstrap 5
+            function showModal() {
+                const modalElement = document.getElementById('statutModal');
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            }
+    
+            function closeModal() {
+                const modalElement = document.getElementById('statutModal');
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                modal.hide();
+                document.getElementById('statutForm').reset();
+                document.getElementById('statutId').value = '';
+            }
+    
+            // Attacher les événements du formulaire
+            document.getElementById('statutForm').addEventListener('submit', saveStatut);
+    
+            // Charger les statuts au chargement de la page
+            document.addEventListener('DOMContentLoaded', loadStatuts);
+    
+            // Exposer les fonctions nécessaires globalement
+            window.api = {
+                loadStatutForUpdate,
+                deactivateStatut,
+                showModal,
+                closeModal
+            };
+        })();
+    </script>
+    
+</body>
+</html>

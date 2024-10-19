@@ -4,12 +4,15 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron ."
-},
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
     "electron": "^32.0.1"
+  },
+  "dependencies": {
+    "jquery": "^3.7.1"
   }
 }
