@@ -1,5 +1,5 @@
 # Environnement virtuel Python
-venv/
+.venv/
 env/
 
 # Fichiers de configuration de l'éditeur
