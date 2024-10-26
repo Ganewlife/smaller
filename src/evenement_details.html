@@ -67,6 +67,14 @@
                 <h5>Liste des Membres inscrits à l'événement</h5>
                 <button class="btn btn-primary m-2" onclick="">Ajouter une inscription</button>
             </div>
+            <div class="mb-3">
+                <label for="filterSelect" class="form-label">Filtrer par statut :</label>
+                <select id="filterSelect" class="form-select">
+                    <option value="all">Toutes</option>
+                    <option value="validated">Validées</option>
+                    <option value="waiting">En liste d'attente</option>
+                </select>
+            </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-striped">
@@ -87,6 +95,49 @@
             </div>
         </div>
 
+        <!-- Fais la présence des membre pour une occurrence d'événement -->
+        <div class="card my-4">
+            <div class="card-header">
+                <h2>Gérer la présence - Événement</h2>
+                <span id="eventName"></span>
+            </div>
+            <div class="card-body">
+                <form id="presenceForm">
+                    <!-- Sélection de la date de l'occurrence -->
+                    <div class="mb-3 form-group">
+                        <label for="date_occurrence">Date de l'occurrence</label>
+                        <input type="date" id="date_occurrence" name="date_occurrence" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Rechercher un participant..." />
+                    </div>
+            
+                    <!-- Case à cocher pour tout sélectionner -->
+                    <div class="mb-3 form-group">
+                        <input type="checkbox" id="selectAll"> Sélectionner tous les participants
+                    </div>
+            
+                    <!-- Tableau des participants -->
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Nom du Membre</th>
+                                <th>Présence</th>
+                            </tr>
+                        </thead>
+                        <tbody id="participantsTable">
+                            <!-- Le contenu sera généré par renderer.js -->
+                        </tbody>
+                    </table>
+            
+                    <!-- Bouton de soumission -->
+                    <button type="submit" class="btn btn-primary">Enregistrer la présence</button>
+                </form>
+            </div>
+            <button class="btn btn-secondary" id="loadMoreButton">Charger plus</button>
+        </div>
+
 
     </div>
 
@@ -98,7 +149,17 @@
     <script defer>
         (function() {
             const apiBaseUrl = 'http://localhost:5000/api';
-            let globalEventId = null;
+            let globalEventId = null
+            async function initializeGlobalEventId() {
+                try {
+                    EventId = await window.api.getEventId();
+                    console.log("evenement id:", EventId);
+                    globalEventId = EventId
+                } catch (error) {
+                    console.error('Erreur lors de la récupération de l\'ID de l\'événement:', error);
+                }
+            }
+
             const inscriptionTableBody = document.getElementById('inscriptionTableBody');
             const multipleInscriptionForm = document.getElementById('multipleInscriptionForm');
             const membreSelect = document.getElementById('membreSelect');
@@ -107,7 +168,7 @@
             window.addEventListener('DOMContentLoaded', async () => {
                 try {
                     const eventId = await window.api.getEventId();
-                    // console.log(`ID de l'événement récupéré : ${eventId}`);
+                    
                     if (eventId) {
                         globalEventId = eventId; // Stocke l'ID dans la variable globale
                         loadEventDetails(eventId); // Appeler votre fonction avec l'ID de l'événement
@@ -143,74 +204,76 @@
                 }
             }
     
-            // Charger les inscriptions de l'événement
             async function loadInscriptions() {
                 try {
                     const response = await fetch(`${apiBaseUrl}/inscriptions?evenement_id=${globalEventId}`);
+                    
                     if (!response.ok) {
-                        throw new Error("Erreur lors du chargement des inscriptions");
+                        // Récupérer le message d'erreur du serveur
+                        const errorData = await response.json(); // Essayer de lire la réponse comme JSON
+                        throw new Error(errorData.error || "Erreur lors du chargement des inscriptions"); // Utiliser le message d'erreur ou un message par défaut
                     }
-    
+
                     const inscriptions = await response.json();
                     inscriptionTableBody.innerHTML = ''; // Nettoyer le tableau avant de le remplir
-    
-                    inscriptions.forEach(inscription => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${inscription.id}</td>
-                            <td>${inscription.membre.fullname}</td>
-                            <td>${inscription.en_liste_attente ? 'En liste d\'attente' : 'Validée'}</td>
-                            <td>
-                                ${inscription.en_liste_attente ? `<button class="btn btn-success btn-sm" data-inscription-id="${inscription.id}">Valider</button>` : ''}
-                                <button class="btn btn-warning btn-sm" data-inscription-id="${inscription.id}">Supprimer</button>
-                            </td>
-                        `;
-                        inscriptionTableBody.appendChild(row);
-                    });
 
-                    // Gestion des événements pour chaque bouton de validation
-                    document.querySelectorAll('.btn-success').forEach(button => {
-                        button.addEventListener('click', async (event) => {
-                            const inscriptionId = event.currentTarget.getAttribute('data-inscription-id');
-                            await validateInscription(inscriptionId);
-                        });
-                    });
-
-                    // Fonction pour valider une inscription
-                    async function validateInscription(inscriptionId) {
-                        try {
-                            const response = await fetch(`${apiBaseUrl}/inscriptions/${inscriptionId}/valider`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
+                    
+                    // Fonction pour afficher les inscriptions en fonction du filtre sélectionné
+                    function renderFilteredInscriptions(filter) {
+                        inscriptionTableBody.innerHTML = ''; // Nettoyer le tableau avant de le remplir
+                        
+                        inscriptions
+                            .filter(inscription => {
+                                if (filter === 'validated') {
+                                    return !inscription.en_liste_attente;
+                                } else if (filter === 'waiting') {
+                                    return inscription.en_liste_attente;
                                 }
+                                return true;
+                            })
+                            .forEach(inscription => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>${inscription.id}</td>
+                                    <td>${inscription.membre.fullname}</td>
+                                    <td>${inscription.en_liste_attente ? 'En liste d\'attente' : 'Validée'}</td>
+                                    <td>
+                                        ${inscription.en_liste_attente ? `<button class="btn btn-success btn-sm" data-inscription-id="${inscription.id}">Valider</button>` : ''}
+                                        <button class="btn btn-warning btn-sm" data-inscription-id="${inscription.id}">Supprimer</button>
+                                    </td>
+                                `;
+                                inscriptionTableBody.appendChild(row);
                             });
 
-                            if (!response.ok) {
-                                const errorData = await response.json();
-                                throw new Error(errorData.message);
-                            }
+                        // Gestion des événements pour chaque bouton de validation
+                        document.querySelectorAll('.btn-success').forEach(button => {
+                            button.addEventListener('click', async (event) => {
+                                const inscriptionId = event.currentTarget.getAttribute('data-inscription-id');
+                                await validateInscription(inscriptionId);
+                            });
+                        });
 
-                            alert("Inscription validée avec succès.");
-                            // Recharger les inscriptions après validation
-                            await loadInscriptions();
-                        } catch (error) {
-                            // console.error("Erreur:", error);
-                            alert(error);
-                        }   
+                        // Gestion des événements pour chaque bouton de suppression
+                        document.querySelectorAll('.btn-warning').forEach(button => {
+                            button.addEventListener('click', async (event) => {
+                                const inscriptionId = event.currentTarget.getAttribute('data-inscription-id');
+                                await removeInscription(inscriptionId);
+                            });
+                        });
                     }
 
-    
-                    // Gestion des événements pour chaque bouton de suppression
-                    document.querySelectorAll('.btn-warning').forEach(button => {
-                        button.addEventListener('click', async (event) => {
-                            const inscriptionId = event.currentTarget.getAttribute('data-inscription-id');
-                            await removeInscription(inscriptionId);
-                        });
+                    // Initialement, afficher toutes les inscriptions
+                    renderFilteredInscriptions('all');
+
+                    // Ajouter un écouteur d'événement pour le changement de filtre
+                    document.getElementById('filterSelect').addEventListener('change', (event) => {
+                        const filter = event.target.value;
+                        renderFilteredInscriptions(filter);
                     });
+
                 } catch (error) {
                     console.error("Erreur:", error);
-                    alert("Une erreur s'est produite lors du chargement des inscriptions.");
+                    alert(error.message);
                 }
             }
     
@@ -291,8 +354,170 @@
                     alert("Une erreur s'est produite lors de la suppression de l'inscription.");
                 }
             }
+
+            // gestion des présence ou participation à un evenement
+            const presenceForm = document.getElementById('presenceForm');
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const participantsTable = document.getElementById('participantsTable');
+            // const presenceCheckboxes = document.querySelectorAll('.presenceCheckbox');
+            let presenceCheckboxes = [];
+
+            let currentPage = 1;
+            const pageSize = 20;
+            let currentDateOccurrence = '';
+
+            let loadedParticipants = []; // Stockage des participants récupérés
+
+            // Charger les participants et les stocker localement
+            async function loadParticipants(date, page = 1) {
+                if (!globalEventId) {
+                    await initializeGlobalEventId(); // Attendre que l'ID de l'événement soit récupéré
+                }
+                
+                currentDateOccurrence = date;
+                const url = `${apiBaseUrl}/evenements/${globalEventId}/participants?date_occurrence=${date}&page=${page}&page_size=${pageSize}`;
+
+                try {
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    
+                    // Si la première page est chargée, remplacer le tableau complet
+                    if (page === 1) {
+                        loadedParticipants = data.participants || [];
+                    } else {
+                        loadedParticipants = [...loadedParticipants, ...(data.participants || [])];
+                    }
+
+                    displayParticipants(loadedParticipants); // Afficher les participants sans filtre
+                    toggleLoadMoreButton(data); // Gérer la visibilité du bouton Charger Plus
+                    presenceCheckboxes = document.querySelectorAll('.presenceCheckbox'); // collecter les membres selectionnés
+                } catch (error) {
+                    console.error('Erreur lors du chargement des participants:', error);
+                }
+            }
+
+            // Fonction pour afficher les participants dans le tableau
+            function displayParticipants(participants) {
+                const participantsTable = document.getElementById('participantsTable');
+                participantsTable.innerHTML = ''; // Vider le tableau avant de le remplir
+
+                if (participants.length > 0) {
+                    participants.forEach(participant => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${participant.nom} ${participant.prenom}</td>
+                            <td>${participant.email}</td>
+                            <td><input type="checkbox" class="presenceCheckbox" value="${participant.id}"></td>
+                        `;
+                        participantsTable.appendChild(row);
+                    });
+                } else {
+                    participantsTable.innerHTML = '<tr><td colspan="3">Aucun participant trouvé.</td></tr>';
+                }
+            }
+
+            // Gérer la visibilité du bouton "Charger Plus"
+            function toggleLoadMoreButton(data) {
+                const loadMoreButton = document.getElementById('loadMoreButton');
+                if (data.page < data.pages) {
+                    loadMoreButton.style.display = 'block';
+                } else {
+                    loadMoreButton.style.display = 'none';
+                }
+            }
+
+            // Filtrer les participants en fonction du texte de recherche
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', function () {
+                const searchValue = searchInput.value.trim().toLowerCase();
+                const filteredParticipants = loadedParticipants.filter(participant => 
+                    participant.nom.toLowerCase().includes(searchValue) || 
+                    participant.prenom.toLowerCase().includes(searchValue) ||
+                    participant.email.toLowerCase().includes(searchValue)
+                );
+                displayParticipants(filteredParticipants); // Afficher les résultats filtrés
+            });
+
+            // Charger les participants à l'initialisation
+            document.getElementById('date_occurrence').addEventListener('change', function () {
+                const selectedDate = this.value;
+                currentPage = 1; // Réinitialiser la pagination
+                loadParticipants(selectedDate, currentPage);
+            });
+
+            // Charger la page suivante lors du clic sur "Charger Plus"
+            document.getElementById('loadMoreButton').addEventListener('click', function () {
+                currentPage++;
+                const selectedDate = document.getElementById('date_occurrence').value;
+                loadParticipants(selectedDate, currentPage);
+            });
+
+
+            // Écouter le changement du champ date_occurrence
+            document.getElementById('date_occurrence').addEventListener('change', function () {
+                const selectedDate = this.value;
+                currentPage = 1; // Réinitialiser la pagination
+                loadParticipants(selectedDate, currentPage);
+            });
+
+
+            // Sélectionner tous les participants
+            selectAllCheckbox.addEventListener('change', function() {
+                presenceCheckboxes.forEach(checkbox => {
+                    checkbox.checked = selectAllCheckbox.checked;
+                });
+            });
+
+            // Soumission du formulaire de présence
+            presenceForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const date_occurrence = document.getElementById('date_occurrence').value;
+                const selectedParticipants = [];
+
+                presenceCheckboxes.forEach(checkbox => {
+                    if (checkbox.checked) {
+                        selectedParticipants.push(checkbox.value);
+                    }
+                });
+
+                if (selectedParticipants.length === 0) {
+                    console.log("Les participants selectionés: ",selectedParticipants);
+                    alert('Veuillez sélectionner au moins un participant.');
+                    return;
+                }
+
+                const requestData = {
+                    inscription_ids: selectedParticipants,
+                    date_occurrence: date_occurrence
+                };
+
+                // Requête pour marquer la présence
+                fetch(`${apiBaseUrl}/evenements/${globalEventId}/participants/presence`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        // Optionnel : rafraîchir la page ou mettre à jour l'interface
+                        alert(data.message);
+                        loadParticipants(date_occurrence, 1);  // Recharge les participants après enregistrement
+                    } else {
+                        alert(data.error || 'Erreur lors de la soumission.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                });
+            });
+
+            // Charger les participants à l'initialisation
+            loadParticipants();
         })();
     </script>
-    
 </body>
 </html>

@@ -71,20 +71,27 @@
                                     <label for="evenementLieu" class="form-label">Lieu</label>
                                     <input type="text" class="form-control" id="evenementLieu" required>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="evenementNbParticipantsMax" class="form-label">Nombre de Participants Max</label>
-                                    <input type="number" class="form-control" id="evenementNbParticipantsMax" value="100" required>
+                                <div class="row mb-3">
+                                    <div class=" col-md-6 mb-3">
+                                        <label for="evenementNbParticipantsMax" class="form-label">Nombre de Participants Max</label>
+                                        <input type="number" class="form-control" id="evenementNbParticipantsMax" value="100" required>
+                                    </div>
+                                    <div class=" col-md-6 mb-3">
+                                        <label for="evenementEstRecurrent" class="form-label">Récurrent ?</label>
+                                        <select class="form-control" id="evenementEstRecurrent">
+                                            <option value="false">Non</option>
+                                            <option value="true">Oui</option>
+                                        </select>
+                                    </div>                    
                                 </div>
-                                <div class="mb-3">
-                                    <label for="evenementEstRecurrent" class="form-label">L'événement est-il récurrent ?</label>
-                                    <select class="form-control" id="evenementEstRecurrent">
-                                        <option value="false">Non</option>
-                                        <option value="true">Oui</option>
-                                    </select>
-                                </div>                    
-                                <div class="mb-3">
+                                <div class="mb-3" id="evenementRecurrenceDetailsBlock" style="display: none;">
                                     <label for="evenementRecurrenceDetails" class="form-label">Détails de la récurrence</label>
                                     <input type="text" class="form-control" id="evenementRecurrenceDetails">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="evenementDescription" class="form-label">Description</label>
+                                    <!-- <input type="text" class="form-control" id="evenementDescription" required> -->
+                                    <textarea type="text" class="form-control" id="evenementDescription"></textarea>
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -185,6 +192,14 @@
         const apiBaseUrl = 'http://localhost:5000/api';
         (function() {
             const { ipcRenderer } = require('electron');
+
+            // Fonction pour formater la date en français sans l'heure
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }).format(date);
+            }
+            
+
             async function validateNumber(input) {
                 const value = input.value;
 
@@ -214,7 +229,9 @@
             estRecurrentSelect.addEventListener('change', function() {
                 if (this.value === "true") {
                     recurrenceOptionsDiv.style.display = 'block';
+                    document.getElementById('evenementRecurrenceDetailsBlock').style.display='block';
                 } else {
+                    document.getElementById('evenementRecurrenceDetailsBlock').style.display='none';
                     recurrenceOptionsDiv.style.display = 'none';
                     jourSemaineOption.style.display = 'none';
                     jourMoisOption.style.display = 'none';
@@ -242,6 +259,7 @@
                 const nom = document.getElementById('evenementNom').value;
                 const date = document.getElementById('evenementDate').value;
                 const lieu = document.getElementById('evenementLieu').value;
+                const description = document.getElementById('evenementDescription').value;
                 const nbParticipantsMax = document.getElementById('evenementNbParticipantsMax').value;
                 const estRecurrent = document.getElementById('evenementEstRecurrent').value === 'true';
                 const recurrenceDetails = document.getElementById('evenementRecurrenceDetails').value;
@@ -253,7 +271,7 @@
                     await fetch(url, {
                         method: method,
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ nom, date, lieu, nb_participants_max: nbParticipantsMax, est_recurrent: estRecurrent, recurrence_details: recurrenceDetails })
+                        body: JSON.stringify({ nom, date, lieu, description, nb_participants_max: nbParticipantsMax, est_recurrent: estRecurrent, recurrence_details: recurrenceDetails })
                     });
                     document.getElementById('evenementForm').reset();
                     document.getElementById('evenementId').value = '';
@@ -330,6 +348,7 @@
                     document.getElementById('evenementNom').value = evenement.nom;
                     document.getElementById('evenementDate').value = evenement.date;
                     document.getElementById('evenementLieu').value = evenement.lieu;
+                    document.getElementById('evenementDescription').value = evenement.description;
                     document.getElementById('evenementNbParticipantsMax').value = evenement.nb_participants_max;
                     const selectEstRecurrent = document.getElementById('evenementEstRecurrent');
                     selectEstRecurrent.value = evenement.est_recurrent ? 'true' : 'false';
@@ -350,7 +369,7 @@
             document.addEventListener('click', (event) => {
                 if (event.target.classList.contains('details-btn')) {
                     const evenementId = event.target.getAttribute('data-id');
-                    console.log(`ID de l'événement récupéré : ${evenementId}`);
+                    // console.log(`ID de l'événement récupéré : ${evenementId}`);
                     // Envoyer un message à main.js pour ouvrir la fenêtre des détails
                     ipcRenderer.send('open-event-details', evenementId);
                 }
@@ -375,7 +394,7 @@
                     const row = `
                         <tr>
                             <td>${evenement.nom}</td>
-                            <td>${evenement.date}</td>
+                            <td>${formatDate(evenement.date)}</td>
                             <td>${evenement.lieu}</td>
                             <td>${evenement.nb_participants_max}</td>
                             <td>${evenement.est_recurrent ? 'Oui' : 'Non'}</td>

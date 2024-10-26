@@ -533,7 +533,7 @@ class Inscription(BaseModel):
     @classmethod
     def get_validated_inscriptions(cls, evenement_id, statut):
         """Récupère toutes les inscriptions validées (non en liste d'attente) pour un événement donné."""
-        return cls.query.filter_by(envenement_id=evenement_id, en_liste_attente=statut).all()
+        return cls.query.filter_by(active=True,envenement_id=evenement_id, en_liste_attente=statut).all()
 
         
 class Participation(BaseModel):
@@ -543,6 +543,7 @@ class Participation(BaseModel):
     # evenement_id = db.Column(db.Integer, db.ForeignKey('evenements.id'), nullable=False)
     
     presence = db.Column(db.Boolean, default=True)
+    date_occurrence = db.Column(db.Date, nullable=False)
     inscription_id = db.Column(db.Integer, db.ForeignKey('inscriptions.id'), nullable=False)
 
     # Relation avec l'inscription
@@ -552,6 +553,23 @@ class Participation(BaseModel):
     def __repr__(self):
         return f'<Participation Membre ID {self.membre_id} à l\'événement ID {self.evenement_id}>'
     
+    @classmethod
+    def creer_participation(cls, inscription_id, date_occurrence):
+        """Créer une participation pour une inscription et une occurrence spécifique."""
+        participation = cls.query.filter_by(inscription_id=inscription_id, date_occurrence=date_occurrence).first()
+
+        if not participation:
+            nouvelle_participation = cls(
+                inscription_id=inscription_id,
+                date_occurrence=date_occurrence,
+                presence=False  # Par défaut la présence est False
+            )
+            db.session.add(nouvelle_participation)
+            db.session.commit()
+            return nouvelle_participation
+        
+        return participation
+
     @classmethod
     def get_participations_by_event(cls, event_id):
         """Récupérer toutes les participations pour un événement spécifique via son inscription."""
@@ -564,30 +582,18 @@ class Participation(BaseModel):
     
 
     @classmethod
-    def marquer_presence(cls, inscription_ids):
-        """Méthode pour marquer la présence pour plusieurs inscriptions."""
-        participations = cls.query.filter(cls.inscription_id.in_(inscription_ids)).all()
-        for participation in participations:
-            participation.presence = True
+    def marquer_presence(cls, inscription_ids, date_occurence):
+        """Méthode pour marquer la présence pour plusieurs inscriptions à une date spécifique."""
+        for inscription_id in inscription_ids:
+            participation = cls.query.filter_by(inscription_id=inscription_id, date_occurrence=date_occurence).first()
+            if not participation:
+                participation = cls(inscription_id=inscription_id, presence=True, date_occurrence=date_occurence)
+                db.session.add(participation)
+            else:
+                participation.presence = True  # Mise à jour si déjà existant
         db.session.commit()
-        return participations
+        return True
 
-    """ @classmethod
-    def create(cls, inscription_id, presence=True):
-        participation = cls(
-            inscription_id=inscription_id,
-            presence=presence
-        )
-        db.session.add(participation)
-        db.session.commit()
-        return participation
-    
-    # Méthode update
-    def update(self, presence=None):
-        if presence is not None:
-            self.presence = presence
-        self.updated_at = datetime.utcnow()
-        db.session.commit() """
 
 class Cotisation(Transaction):
     __tablename__ = 'cotisations'

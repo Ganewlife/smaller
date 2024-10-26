@@ -114,10 +114,38 @@ def dashboard(current_admin):
         'admin_id': current_admin.id
     })
 
+# creer une fonction de fixture membre
+def creer_membres_fictifs(nombre=50):
+    for i in range(nombre):
+        # Incrémentation pour les prénoms et emails
+        prenom = f"Test{str(i + 7).zfill(3)}"  # Commence par 007
+        email = f"{prenom.lower()}@gmail.com"
+        
+        # Incrémentation pour le numéro de téléphone
+        telephone = f"6609{str(1100 + i).zfill(4)}"
+        
+        # Date de naissance aléatoire dans les années 1980-1990
+        date_naissance = datetime.datetime.strptime('1980-01-01', '%Y-%m-%d') + datetime.timedelta(days=i * 100)
+        
+        # Création du membre fictif
+        membre = Membre.create(
+            nom="TESTEUR",
+            prenom=prenom,
+            email=email,
+            telephone=telephone,
+            date_naissance=date_naissance.date(),
+            profil_photo=None,
+            categorie_id=1,
+            statut_id=1
+        )
+        
+    return f"{nombre} membres fictifs créés avec succès."
 
 # Créer un membre
 @main.route('/membres', methods=['POST'])
 def create_membre():
+    """ resultat = creer_membres_fictifs(50)  # crée 50 membres par défaut
+    return jsonify({"message": resultat}), 201 """
     data = request.json
     
     categorie_id = data.get('categorie_id')
@@ -641,6 +669,7 @@ def planifier_evenement():
         nom=data['nom'],
         date=date,
         lieu=data['lieu'],
+        description=data['description'],
         nb_participants_max=data.get('nb_participants_max', 100),
         est_recurrent=data.get('est_recurrent', False),
         recurrence_details=data.get('recurrence_details', None)
@@ -681,6 +710,7 @@ def get_evenement(evenement_id):
         "nom": evenement.nom,
         "date": evenement.date.strftime('%Y-%m-%d'),
         "lieu": evenement.lieu,
+        "description": evenement.description,
         "nb_participants_max": evenement.nb_participants_max,
         "est_recurrent": evenement.est_recurrent,
         "recurrence_details": evenement.recurrence_details
@@ -712,6 +742,7 @@ def update_evenement(evenement_id):
         nom=data['nom'],
         date=date,
         lieu=data['lieu'],
+        description=data['description'],
         nb_participants_max=data.get('nb_participants_max'),
         est_recurrent=data.get('est_recurrent', False),
         recurrence_details=data.get('recurrence_details')
@@ -811,16 +842,20 @@ def get_membres_non_inscrits():
     return jsonify([{"id": membre.id, "nom": membre.nom, "fullname":membre.nom+" "+membre.prenom} for membre in membres_disponibles]), 200
 
 
-# Recuperer lees inscriptions
+# Recuperer lees inscriptions d'un evenement specifique
 @main.route('/inscriptions', methods=['GET'])
 def get_inscriptions():
-    evenement_id = request.args.get('evenement_id')
-    if not evenement_id:
-        return jsonify({"error": "L'ID de l'événement est requis"}), 400
-    
+    try:
+        evenement_id = int(request.args.get('evenement_id'))
+    except (TypeError, ValueError):
+        return jsonify({"error": "L'ID de l'événement doit être un entier valide."}), 400
+
     try:
         # Rechercher les inscriptions en fonction de l'ID de l'événement
         inscriptions = Inscription.query.filter_by(envenement_id=evenement_id,active=True).all()
+        if not inscriptions:
+            return jsonify({"message": "Aucune inscription trouvée pour cet événement."}), 404
+        
         inscriptions_data = [{
             "id": inscription.id,
             "membre_id": inscription.membre_id,
@@ -860,6 +895,7 @@ def inscrire_multiple_membres():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
+
 # Route pour inscrire un seul membres à un evenement
 @main.route('/inscriptions', methods=['POST'])
 def create_inscription():
@@ -879,34 +915,34 @@ def create_inscription():
         return jsonify({"error": str(e)}), 400
     
 
-@main.route('/inscriptions/<int:inscription_id>/valider', methods=['POST'])
-def valider_inscription(inscription_id):
-    """Route pour valider une inscription."""
-    inscription = Inscription.query.get(inscription_id)
+# @main.route('/inscriptions/<int:inscription_id>/valider', methods=['POST'])
+# def valider_inscription(inscription_id):
+#     """Route pour valider une inscription."""
+#     inscription = Inscription.query.get(inscription_id)
 
-    if not inscription:
-        return jsonify({"message": "Inscription non trouvée."}), 404
+#     if not inscription:
+#         return jsonify({"message": "Inscription non trouvée."}), 404
 
-    try:
-        inscription.valider_inscription()
-        return jsonify({"message": "Inscription validée avec succès."}), 200
-    except ValueError as e:
-        return jsonify({"message": str(e)}), 400
+#     try:
+#         inscription.valider_inscription()
+#         return jsonify({"message": "Inscription validée avec succès."}), 200
+#     except ValueError as e:
+#         return jsonify({"message": str(e)}), 400
     
     
-@main.route('/inscriptions/<int:inscription_id>/ajouter_liste_attente', methods=['POST'])
-def ajouter_liste_attente(inscription_id):
-    """Route pour ajouter un membre à la liste d'attente."""
-    inscription = Inscription.query.get(inscription_id)
+# @main.route('/inscriptions/<int:inscription_id>/ajouter_liste_attente', methods=['POST'])
+# def ajouter_liste_attente(inscription_id):
+#     """Route pour ajouter un membre à la liste d'attente."""
+#     inscription = Inscription.query.get(inscription_id)
 
-    if not inscription:
-        return jsonify({"message": "Inscription non trouvée."}), 404
+#     if not inscription:
+#         return jsonify({"message": "Inscription non trouvée."}), 404
 
-    inscription.ajouter_liste_attente()
-    return jsonify({"message": "Inscription ajoutée à la liste d'attente avec succès."}), 200
+#     inscription.ajouter_liste_attente()
+#     return jsonify({"message": "Inscription ajoutée à la liste d'attente avec succès."}), 200
 
 
-# Permet de supprimer un incription spécifique.
+# Permet de supprimer une incription spécifique.
 @main.route('/inscriptions/<int:inscription_id>', methods=['DELETE'])
 def delete_inscription(inscription_id):
     inscription = Inscription.get_by_id(inscription_id)
@@ -929,6 +965,7 @@ def create_participation():
     participation = Participation.create(inscription_id=inscription_id, presence=presence)
     return jsonify({"message": "Participation créée", "participation_id": participation.id}), 201
 
+
 @main.route('/participations/event/<int:event_id>', methods=['GET'])
 def get_participations_by_event(event_id):
     participations = Participation.get_participations_by_event(event_id)
@@ -941,7 +978,59 @@ def get_participations_by_event(event_id):
     } for p in participations]), 200
 
 
+# Recuperer les inscriptions validées pour un evenement
 @main.route('/evenements/<int:event_id>/participants', methods=['GET'])
+def get_participants(event_id):
+    # Récupérer la date d'occurrence, la page et la taille de la page depuis les paramètres de la requête
+    date_occurrence = request.args.get('date_occurrence')
+    page = int(request.args.get('page', 1))
+    page_size = int(request.args.get('page_size', 20))
+
+    # Si aucune date n'est fournie, renvoyer une liste vide
+    if not date_occurrence:
+        return jsonify({'participants': []}), 200
+
+    # Utiliser la méthode du modèle pour récupérer les inscriptions validées pour l'événement
+    participants_query = Inscription.get_validated_inscriptions(event_id, False)
+
+    # Filtrer les inscriptions qui n'ont pas de participation enregistrée pour la date donnée
+    filtered_participants = []
+    for participant in participants_query:
+        # Vérifier si une participation existe pour la date d'occurrence donnée
+        participation_exists = Participation.query.filter_by(
+            inscription_id=participant.id,
+            date_occurrence=date_occurrence
+        ).first() is not None
+
+        if not participation_exists:  # Si aucune participation n'existe pour cette date
+            filtered_participants.append(participant)
+
+    # Pagination manuelle
+    total_participants = len(filtered_participants)
+    start = (page - 1) * page_size
+    end = start + page_size
+    paginated_participants = filtered_participants[start:end]
+
+    # Formatage des résultats
+    result = []
+    for participant in paginated_participants:
+        result.append({
+            'id': participant.id,
+            'nom': participant.membre.nom,
+            'prenom': participant.membre.prenom,
+            'email': participant.membre.email,
+            'presence': participant.participations[0].presence if participant.participations else False
+        })
+
+    return jsonify({
+        'participants': result,
+        'total': total_participants,
+        'page': page,
+        'pages': (total_participants // page_size) + (1 if total_participants % page_size > 0 else 0)
+    }), 200
+
+
+""" @main.route('/evenements/<int:event_id>/participants', methods=['GET'])
 def get_participants(event_id):
     # Utiliser la méthode du modèle pour récupérer les inscriptions validées
     participants = Inscription.get_validated_inscriptions(event_id, False)
@@ -956,8 +1045,9 @@ def get_participants(event_id):
             'presence': participant.participations[0].presence if participant.participations else False
         })
     
-    return jsonify(result)
+    return jsonify({'participants': result}) """
 
+""" # Recuperer les inscriptions en attente pour un evenement
 @main.route('/evenements/<int:event_id>/participants/attente', methods=['GET'])
 def get_participants_en_attente(event_id):
     # Utiliser la méthode du modèle pour récupérer les inscriptions en attente
@@ -973,19 +1063,52 @@ def get_participants_en_attente(event_id):
             'presence': participant.participations[0].presence if participant.participations else False
         })
     
-    return jsonify(result)
+    return jsonify(result) """
 
-# Fais la présence de membre pour un evenement
+# Fais la présence des membres pour un evenement
 @main.route('/evenements/<int:event_id>/participants/presence', methods=['POST'])
 def marquer_presence(event_id):
     data = request.json
     inscription_ids = data.get('inscription_ids', [])
+    date_occurrence = data.get('date_occurrence')
 
     if not inscription_ids:
         return jsonify({'error': 'Aucun participant sélectionné'}), 400
 
-    # Appeler la méthode pour marquer la présence
-    Participation.marquer_presence(inscription_ids)
+    if not date_occurrence:
+        return jsonify({'error': 'Date d\'occurrence non spécifiée'}), 400
+
+    # Vérifier que toutes les inscriptions appartiennent bien à l'événement donné
+    inscriptions = Inscription.query.filter(
+        Inscription.envenement_id == event_id,
+        Inscription.active == True,
+        Inscription.en_liste_attente == False,
+        Inscription.id.in_(inscription_ids)
+    ).all()
+
+    print("Les participations",inscriptions)
+    if not inscriptions:
+        return jsonify({'error': 'Aucune inscription valide trouvée pour cet événement'}), 400
+
+
+    # Vérifier les participations existantes pour éviter les doublons
+    existing_participations = Participation.query.filter(
+        Participation.active == True,
+        Participation.date_occurrence == date_occurrence,
+        Participation.inscription_id.in_([inscription.id for inscription in inscriptions])
+    ).all()
+
+    # Collecter les IDs des participations existantes
+    existing_participation_ids = {participation.inscription_id for participation in existing_participations}
+
+    # Exclure les inscriptions qui ont déjà une participation pour cette date
+    valid_inscription_ids = [inscription.id for inscription in inscriptions if inscription.id not in existing_participation_ids]
+
+    if not valid_inscription_ids:
+        return jsonify({'message': 'Toutes les inscriptions sélectionnées ont déjà marqué leur présence pour cette date.'}), 200
+
+    # Appeler la méthode pour marquer la présence avec les inscriptions valides
+    Participation.marquer_presence(valid_inscription_ids, convertir_date(date_occurrence))
 
     return jsonify({'message': 'Présence enregistrée avec succès'}), 200
 

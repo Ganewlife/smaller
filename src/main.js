@@ -4,7 +4,7 @@ let detailWindow; // Variable pour stocker la fenêtre des détails
 
 function createWindow() {
     const win = new BrowserWindow({
-        width: 800,
+        width: 900,
         height: 600,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
@@ -22,8 +22,8 @@ function createDetailWindow(eventId) {
         detailWindow.focus();
     } else {
         detailWindow = new BrowserWindow({
-            width: 600,
-            height: 400,
+            width: 800,
+            height: 600,
             webPreferences: {
                 preload: path.join(__dirname, 'preload.js'),
                 contextIsolation: true, // Assurez-vous que c'est activé
