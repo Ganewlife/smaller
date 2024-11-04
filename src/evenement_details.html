@@ -9,7 +9,8 @@
     <link rel="stylesheet" href="renderer/bootstrap513.min.css">
     
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="styles.css">
+    <!-- <link rel="stylesheet" href="styles.css"> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js" defer></script>
 </head>
 <body>
     <header>
@@ -42,38 +43,83 @@
         </nav>
     </header>
     <div class="container mt-5">
-        <h1 class="text-center mb-4">Gestion des indcriptions</h1>
+        <h1 class="text-center mb-4"><span id="eventName"></span></h1>
 
         <!-- Formulaire d'inscription' -->
         <div class="card my-4">
             <div class="card-header">
-                Inscriptions à l'événement
-                <span id="eventName"></span>
+                Formulaire d'inscriptions des membres à l'événement
             </div>
             <div class="card-body">
-                <form id="multipleInscriptionForm">
-                    <div class="mb-3">
-                        <label for="membreSelect" class="form-label">Sélectionner des membres</label>
-                        <select class="form-select" id="membreSelect" multiple required></select>
+                <!-- Barre de recherche -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <input type="text" id="searchNewMembreInput" class="form-control" placeholder="Rechercher par nom de membre...">
                     </div>
-                    <button type="submit" class="btn btn-primary">Inscrire les Membres Sélectionnés</button>
-                </form>
+                    <div class="col-md-3 text-end">
+                        <div class="dropdown">
+                            <button class="btn btn-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Exporter
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                                <li><a class="dropdown-item" onclick="exportMembreTableToPDF()">En PDF</a></li>
+                                <li><a class="dropdown-item" onclick="exportMembreTableToCSV()">En CSV</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <!-- Tableau des membres -->
+                <table class="table table-striped table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nom complet</th>
+                            <th>Email</th>
+                            <th>Téléphone</th>
+                            <th>Tout cocher <input type="checkbox" id="selectAllMembre"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="MembresTable">
+                        <!-- Rempli dynamiquement via JavaScript -->
+                    </tbody>
+                </table>
+                <!-- Pagination -->
+                <nav aria-label="paginationMembre">
+                    <ul class="pagination justify-content-center" id="paginationMembre"></ul>
+                </nav>
+            
+                <button class="btn btn-primary" id="inscrireMembres">Inscrire</button>
             </div>
         </div>
 
-        <!-- Liste des Membres à inscrire -->
+        <!-- Liste des Membres inscrits à l'événement -->
         <div class="card my-4">
             <div class="card-heade d-flex justify-content-between align-items-center">
                 <h5>Liste des Membres inscrits à l'événement</h5>
-                <button class="btn btn-primary m-2" onclick="">Ajouter une inscription</button>
             </div>
-            <div class="mb-3">
-                <label for="filterSelect" class="form-label">Filtrer par statut :</label>
-                <select id="filterSelect" class="form-select">
-                    <option value="all">Toutes</option>
-                    <option value="validated">Validées</option>
-                    <option value="waiting">En liste d'attente</option>
-                </select>
+            <!-- Barre de recherche -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <input type="text" id="searchMembreInscritInput" class="form-control" placeholder="Rechercher par nom de membre...">
+                </div>
+                <div class="col-md-3">
+                    <select id="filterStatusMembreInscrit" class="form-select">
+                        <option value="">Tous les statuts</option>
+                        <option value="confirmé">Confirmé</option>
+                        <option value="liste_attente">En liste d'attente</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Exporter
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                            <li><a class="dropdown-item" onclick="exportTableMembreToPDF()">En PDF</a></li>
+                            <li><a class="dropdown-item" onclick="exportTableMembreToCSV()">En CSV</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -82,23 +128,27 @@
                             <tr>
                                 <th>#</th>
                                 <th>Nom du Membre</th>
-                                <th>Statut</th>
-                                <th>Actions</th>
+                                <th>Email</th>
+                                <th>Téléphone</th>
+*                                <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="inscriptionTableBody">
-                            <!-- Les inscriptions seront injectées ici via JavaScript -->
+                        <tbody id="membreInscritTableBody">
+                            <!-- Les inscriptions seront injectées ici via JavaScript  -->
                         </tbody>
                     </table>
                 </div>
-                
+                <!-- Pagination --> 
+                <nav aria-label="paginationMembreInscrit">
+                    <ul class="pagination justify-content-center" id="paginationMembreInscrit"></ul>
+                </nav>
             </div>
         </div>
-
+        
         <!-- Fais la présence des membre pour une occurrence d'événement -->
         <div class="card my-4">
             <div class="card-header">
-                <h2>Gérer la présence - Événement</h2>
+                <h5>Gestion de présence des membres à une occurrence</h5>
                 <span id="eventName"></span>
             </div>
             <div class="card-body">
@@ -115,15 +165,15 @@
             
                     <!-- Case à cocher pour tout sélectionner -->
                     <div class="mb-3 form-group">
-                        <input type="checkbox" id="selectAll"> Sélectionner tous les participants
+                        <input type="checkbox" id="selectAllInscription"> Sélectionner tous les participants
                     </div>
             
                     <!-- Tableau des participants -->
                     <table class="table table-bordered">
                         <thead>
                             <tr>
-                                <th>Nom du Membre</th>
-                                <th>Présence</th>
+                                <th>Nom du Membre</th>  
+                                <th>Email</th>
                             </tr>
                         </thead>
                         <tbody id="participantsTable">
@@ -138,6 +188,66 @@
             <button class="btn btn-secondary" id="loadMoreButton">Charger plus</button>
         </div>
 
+        <div class="card my-4">
+            <h5>Gestion des Cotisations pour l'Événement</h5>
+            <div class="d-flex mb-3">
+                <input type="number" id="montantCotisation" placeholder="Montant de la cotisation" class="form-control me-2" />
+                <button id="selectAllCheckbox" class="btn btn-outline-secondary">Tout cocher</button>
+            </div>
+            <div class="mb-3" >
+                <label for="transactionDate">Date de transaction :</label>
+                <input class="form-control me-2" type="date" id="transactionDate" name="transactionDate" required>
+            </div>
+            <!-- Barre de recherche -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <input type="text" id="searchMembreInput" class="form-control" placeholder="Rechercher par nom de membre...">
+                </div>
+                <div class="col-md-3">
+                    <select id="filterStatus" class="form-select">
+                        <option value="">Tous les statuts</option>
+                        <option value="confirmé">Confirmé</option>
+                        <option value="liste_attente">En liste d'attente</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Exporter
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                            <li><a class="dropdown-item" onclick="exportTableToPDF()">En PDF</a></li>
+                            <li><a class="dropdown-item" onclick="exportTableToCSV()">En CSV</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <!-- Tableau des inscriptions -->
+            <!-- <table class="table table-hover"> -->
+            <table class="table table-striped table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nom complet</th>
+                        <th>Email</th>
+                        <th>Téléphone</th>
+                        <th>Montant Cotisé</th>
+                        <th>Tout cocher<input type="checkbox" id="selectAll"></th>
+                    </tr>
+                </thead>
+                <tbody id="inscriptionsTable">
+                    <!-- Rempli dynamiquement via JavaScript -->
+                </tbody>
+            </table>
+            <!-- Pagination -->
+            <nav aria-label="Pagination">
+                <ul class="pagination justify-content-center" id="pagination"></ul>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <button class="btn btn-primary btn-sm" id="enregistrerCotisations">Enregistrer les Cotisations</button>
+                <h5 id="totalCotisation">Total: </h5>
+            </div>
+        </div>
 
     </div>
 
@@ -150,20 +260,36 @@
         (function() {
             const apiBaseUrl = 'http://localhost:5000/api';
             let globalEventId = null
+            // Initialisation de l'ID de l'événement
             async function initializeGlobalEventId() {
                 try {
-                    EventId = await window.api.getEventId();
-                    console.log("evenement id:", EventId);
-                    globalEventId = EventId
+                    globalEventId = await window.api.getEventId();
+                    await loadAvailableMembres(globalEventId);
+                    await loadInscripts(globalEventId); // Charger les inscriptions dès que l'ID de l'événement est disponible
+                    await loadMembreInscrit(globalEventId);
                 } catch (error) {
-                    console.error('Erreur lors de la récupération de l\'ID de l\'événement:', error);
+                    console.error("Erreur lors de la récupération de l'ID de l'événement:", error);
                 }
             }
 
-            const inscriptionTableBody = document.getElementById('inscriptionTableBody');
-            const multipleInscriptionForm = document.getElementById('multipleInscriptionForm');
+            const itemsPerPage = 10;
+            const membreInscritTableBody = document.getElementById('membreInscritTableBody');
+            const membresTable = document.getElementById('MembresTable');
             const membreSelect = document.getElementById('membreSelect');
             let eventId; // Déclarer une variable pour stocker l'ID de l'événement
+
+            // gestion des présence ou participation à un evenement
+            const presenceForm = document.getElementById('presenceForm');
+            const selectAllCheckbox = document.getElementById('selectAllInscription');
+            const participantsTable = document.getElementById('participantsTable');
+            // const presenceCheckboxes = document.querySelectorAll('.presenceCheckbox');
+            let presenceCheckboxes = [];
+
+            let currentPage = 1;
+            const pageSize = 20;
+            let currentDateOccurrence = '';
+
+            let loadedParticipants = []; // Stockage des participants récupérés
     
             window.addEventListener('DOMContentLoaded', async () => {
                 try {
@@ -181,8 +307,6 @@
                 }
             });
 
-
-    
             // Charger les détails de l'événement
             async function loadEventDetails(id) {
                 if (!id) {
@@ -196,15 +320,15 @@
                     }
                     const event = await response.json();
                     document.getElementById('eventName').textContent = event.nom;
-                    loadInscriptions();
-                    loadAvailableMembres();
+                    // await loadMembreInscrit(id);
+                    // await loadAvailableMembres(id);
                 } catch (error) {
                     console.error("Erreur:", error);
                     alert("Une erreur s'est produite lors du chargement des détails de l'événement.");
                 }
             }
     
-            async function loadInscriptions() {
+            /* async function loadMembreInscrit() {
                 try {
                     const response = await fetch(`${apiBaseUrl}/inscriptions?evenement_id=${globalEventId}`);
                     
@@ -275,67 +399,317 @@
                     console.error("Erreur:", error);
                     alert(error.message);
                 }
-            }
-    
-            // Charger les membres non inscrits à cet événement
-            async function loadAvailableMembres() {
+            } */
+            
+            async function loadMembreInscrit(eventId) {
                 try {
-                    const response = await fetch(`${apiBaseUrl}/membres_non_inscrits?evenement_id=${globalEventId}`);
-                    if (!response.ok) {
-                        throw new Error("Erreur lors du chargement des membres disponibles");
+                    const response = await fetch(`${apiBaseUrl}/inscriptions?evenement_id=${globalEventId}`);
+                    data = await response.json();
+                    membresInscrits = data.inscriptions
+
+                    // Vérifier si membres est bien un tableau
+                    if (!Array.isArray(membresInscrits)) {
+                        console.error("Données reçues ne sont pas un tableau:", membresInscrits);
+                        membresInscrits = []; // Assurez-vous que `membres` est un tableau vide en cas d'erreur
                     }
-    
-                    const membres = await response.json();
-                    membreSelect.innerHTML = membres.map(membre => `<option value="${membre.id}">${membre.fullname}</option>`).join('');
-                    membreSelect.addEventListener('change', handleMemberSelection);
+
+                    displayMembreInscrit();
                 } catch (error) {
-                    console.error("Erreur:", error);
-                    alert("Une erreur s'est produite lors du chargement des membres disponibles.");
+                    console.error("Erreur de chargement des membres:", error);
                 }
             }
-    
-            // Gérer la sélection de membres pour éviter les doublons
-            function handleMemberSelection() {
-                const selectedOptions = Array.from(membreSelect.selectedOptions);
-                const selectedValues = selectedOptions.map(option => option.value);
-    
-                Array.from(membreSelect.options).forEach(option => {
-                    option.disabled = selectedValues.includes(option.value);
+
+            function displayMembreInscrit() {
+                const tableBody = document.getElementById('membreInscritTableBody');
+                tableBody.innerHTML = '';
+
+                // Application des filtres
+                const searchInput = document.getElementById('searchMembreInscritInput').value.toLowerCase();
+                const filterStatus = document.getElementById('filterStatusMembreInscrit').value;
+
+                let filteredMembreInscrit = membresInscrits.filter(membre => {
+                    const fullname = membre.membre.fullname.toLowerCase();
+                    const email = membre.membre.email.toLowerCase();
+                    const telephone = membre.membre.telephone.toLowerCase();
+                    const matchesSearch = fullname.includes(searchInput) || email.includes(searchInput) || telephone.includes(searchInput);
+                    const matchesStatus = filterStatus === "" || 
+                        (filterStatus === "confirmé" && !membre.en_liste_attente) ||
+                        (filterStatus === "liste_attente" && membre.en_liste_attente);
+
+                    return matchesSearch && matchesStatus;
                 });
+
+                // Pagination
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const paginatedMembreInscrits = filteredMembreInscrit.slice(startIndex, startIndex + itemsPerPage);
+
+                paginatedMembreInscrits.forEach((membre, index) => {
+                    const row = `<tr>
+                        <td>${startIndex + index + 1}</td>
+                        <td>${membre.membre.fullname}</td>
+                        <td>${membre.membre.email}</td>
+                        <td>${membre.membre.telephone}</td>
+                        <td>
+                            ${membre.en_liste_attente ? `<button class="btn btn-success btn-sm validate-btn" data-inscription-id="${membre.id}">Valider</button>` : ''}
+                            <button class="btn btn-warning btn-sm delete-btn" data-inscription-id="${membre.id}">Supprimer</button>
+                        </td>
+                    </tr>`;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+
+                // Ajouter les écouteurs pour les boutons "Valider" et "Supprimer"
+                document.querySelectorAll('.validate-btn').forEach(button => {
+                    button.addEventListener('click', async (event) => {
+                        const inscriptionId = event.target.getAttribute('data-inscription-id');
+                        await validateInscription(inscriptionId);
+                    });
+                });
+
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', async (event) => {
+                        const inscriptionId = event.target.getAttribute('data-inscription-id');
+                        await deleteInscription(inscriptionId);
+                    });
+                });
+
+                setupPaginationMembreInscritp(filteredMembreInscrit.length);
             }
-    
-            // Inscrire plusieurs membres à l'événement
-            multipleInscriptionForm.onsubmit = async function(event) {
-                event.preventDefault();
-                const selectedOptions = Array.from(membreSelect.selectedOptions);
-                const membreIds = selectedOptions.map(option => option.value);
-    
-                if (membreIds.length === 0) {
+
+            async function validateInscription(inscriptionId) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/inscriptions/${inscriptionId}/valider`, { method: 'PUT' });
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        alert(data.message);
+                        await loadMembreInscrit(globalEventId); // Recharger les inscriptions
+                    } else {
+                        alert("Erreur lors de la validation : " + data.message);
+                    }
+                } catch (error) {
+                    console.error("Erreur:", error);
+                    alert("Une erreur s'est produite lors de la validation.");
+                }
+            }
+
+            async function deleteInscription(inscriptionId) {
+                if (!confirm("Êtes-vous sûr de vouloir supprimer cette inscription ?")) return;
+
+                try {
+                    const response = await fetch(`${apiBaseUrl}/inscriptions/${inscriptionId}/supprimer`, { method: 'DELETE' });
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        alert(data.message);
+                        await loadMembreInscrit(globalEventId); // Recharger les inscriptions
+                    } else {
+                        alert("Erreur lors de la suppression : " + data.message);
+                    }
+                } catch (error) {
+                    console.error("Erreur:", error);
+                    alert("Une erreur s'est produite lors de la suppression.");
+                }
+            }
+
+
+            function setupPaginationMembreInscritp(totalItems) {
+                const pagination = document.getElementById('paginationMembreInscrit');
+                pagination.innerHTML = '';
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageItem = `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" onclick="changePageMembreInscrit(${i})">${i}</a>
+                    </li>`;
+                    pagination.insertAdjacentHTML('beforeend', pageItem);
+                }
+            }
+
+            function changePageMembreInscrit(page) {
+                console.log('Changement de age appélé');
+                currentPage = page;
+                displayMembreInscrit();
+            }
+
+            function exportTableMembreToCSV() {
+                let csv = 'Numéro,Nom Complet,Email, Téléphone, Statut,\n';
+                membresInscrits.forEach((membre, index) => {
+                    csv += `${index + 1},"${membre.membre.fullname}","${membre.membre.email}", "${membre.membre.telephone}", ${membre.en_liste_attente ? 'En liste d\'attente' : 'Confirmé'},\n`;
+                });
+                
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'membreInscrits.csv';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+
+            function exportTableMembreToPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text("Liste des membres inscrits", 10, 10);
+
+                let y = 20;
+                membresInscrits.forEach((membre, index) => {
+                    const row = `${index + 1}. ${membre.membre.fullname} - ${membre.membre.email} - ${membre.membre.telephone} - ${membre.en_liste_attente ? 'En liste d\'attente' : 'Confirmé'}`;
+                    doc.text(row, 10, y);
+                    y += 10;
+                });
+
+                doc.save("membreInscrits.pdf");
+            }
+
+            // Gestions d'inscription des mebres
+            // Charger les membres non inscrits à cet événement
+            async function loadAvailableMembres(eventId) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/membres_non_inscrits?evenement_id=${eventId}`);
+                    membres = await response.json();
+
+                    // Vérifier si membres est bien un tableau
+                    if (!Array.isArray(membres)) {
+                        console.error("Données reçues ne sont pas un tableau:", membres);
+                        membres = []; // Assurez-vous que `inscriptions` est un tableau vide en cas d'erreur
+                    }
+                    // console.log('les membres non inscrits:', membres);
+
+                    displayMembres();
+                } catch (error) {
+                    console.error("Erreur de chargement des membres:", error);
+                }
+            }
+
+            function displayMembres() {
+                const tableBody = document.getElementById('MembresTable');
+                tableBody.innerHTML = '';
+
+                // Application des filtres
+                const searchInput = document.getElementById('searchNewMembreInput').value.toLowerCase();
+
+                let filteredMembres = membres.filter(membre => {
+                    const fullname = membre.fullname.toLowerCase();
+                    const email = membre.email.toLowerCase();
+                    const telephone = membre.telephone.toLowerCase();
+                    const matchesSearch = fullname.includes(searchInput) || email.includes(searchInput) || telephone.includes(searchInput);
+
+                    return matchesSearch;
+                });
+
+                // Pagination
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const paginatedMembres = filteredMembres.slice(startIndex, startIndex + itemsPerPage);
+
+                paginatedMembres.forEach((membre, index) => {
+                    const row = `<tr>
+                        <td>${startIndex + index + 1}</td>
+                        <td>${membre.fullname}</td>
+                        <td>${membre.email}</td>
+                        <td>${membre.telephone}</td>
+                        <td><input type="checkbox" class="membre-checkbox" data-id="${membre.membre_id}"></td>
+                    </tr>`;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+
+                setupPaginationMembre(filteredMembres.length);
+            }
+
+            function setupPaginationMembre(totalItems) {
+                const pagination = document.getElementById('paginationMembre');
+                pagination.innerHTML = '';
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageItem = `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" onclick="changePageMembre(${i})">${i}</a>
+                    </li>`;
+                    pagination.insertAdjacentHTML('beforeend', pageItem);
+                }
+            }
+
+            function changePageMembre(page) {
+                currentPage = page;
+                displayMembres();
+            }
+
+            // Exportation des données
+            function exportMembreTableToCSV() {
+                let csv = 'Numéro,Nom Complet\n';
+                membres.forEach((membre, index) => {
+                    csv += `${index + 1},"${membre.fullname}"\n`;
+                });
+                
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'membres.csv';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+
+            function exportMembreTableToPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text("Liste des Membres", 10, 10);
+
+                let y = 20;
+                membres.forEach((membre, index) => {
+                    const row = `${index + 1}. ${membre.fullname} `;
+                    doc.text(row, 10, y);
+                    y += 10;
+                });
+
+                doc.save("membres.pdf");
+            }
+
+            // Gestion de la sélection de tous les membres affcihés
+            document.getElementById('selectAllMembre').addEventListener('click', (event) => {
+                const checkboxes = document.querySelectorAll('.membre-checkbox');
+                checkboxes.forEach(cb => cb.checked = event.target.checked);
+            });
+
+            // Inscrire les membres sélectionnées à l'événement
+            async function inscrireMembres() {
+                const selectedIds = Array.from(document.querySelectorAll('.membre-checkbox:checked'))
+                    .map(cb => cb.getAttribute('data-id'));
+
+                if (selectedIds.length === 0) {
                     alert("Veuillez sélectionner au moins un membre.");
                     return;
                 }
-    
+                // console.log('les memebres selectionnés:',selectedIds);
+                // return 
+                const requestBody = {
+                    membre_ids: selectedIds,
+                    evenement_id: globalEventId
+                };
+
                 try {
                     const response = await fetch(`${apiBaseUrl}/inscriptions/multiple`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ evenement_id: globalEventId, membre_ids: membreIds })
+                        body: JSON.stringify(requestBody)
                     });
-    
-                    const result = await response.json();
+
                     if (response.ok) {
-                        alert("Membres inscrits avec succès.");
-                        loadInscriptions();
-                        loadAvailableMembres();
+                        alert("Inscription de membres effectuée avec succès !");
+                        await loadInscripts(globalEventId); // Recharger les inscriptions
+                        await loadMembreInscrit(globalEventId); // Recharger les inscriptions
+                        await loadAvailableMembres(globalEventId);
                     } else {
-                        alert(result.error);
+                        const errorData = await response.json();
+                        const errorMessage = errorData.error || "Une erreur inconnue s'est produite.";
+                        alert(`Échec de l'inscription de(s) membre(s) : ${errorMessage}`);
                     }
                 } catch (error) {
-                    console.error("Erreur:", error);
-                    alert("Une erreur s'est produite lors de l'inscription des membres.");
+                    console.error("Erreur lors de l'inscription de(s) membre(s):", error);
+                    alert("Une erreur est survenue. Veuillez réessayer.");
                 }
-            };
-    
+            }
+
+
             // Fonction pour supprimer une inscription
             async function removeInscription(inscriptionId) {
                 try {
@@ -348,25 +722,14 @@
                     }
     
                     alert("Inscription supprimée.");
-                    loadInscriptions(); // Recharger les inscriptions après la suppression
+                    const eventId = await window.api.getEventId();
+                    await loadMembreInscrit(eventId); // Recharger les inscriptions après la suppression
                 } catch (error) {
                     console.error("Erreur:", error);
                     alert("Une erreur s'est produite lors de la suppression de l'inscription.");
                 }
             }
 
-            // gestion des présence ou participation à un evenement
-            const presenceForm = document.getElementById('presenceForm');
-            const selectAllCheckbox = document.getElementById('selectAll');
-            const participantsTable = document.getElementById('participantsTable');
-            // const presenceCheckboxes = document.querySelectorAll('.presenceCheckbox');
-            let presenceCheckboxes = [];
-
-            let currentPage = 1;
-            const pageSize = 20;
-            let currentDateOccurrence = '';
-
-            let loadedParticipants = []; // Stockage des participants récupérés
 
             // Charger les participants et les stocker localement
             async function loadParticipants(date, page = 1) {
@@ -515,8 +878,202 @@
                 });
             });
 
+
+            // La gestions des cotisations 
+            // Charger les inscriptions d'un événement spécifique
+            async function loadInscripts(eventId) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/inscriptions?evenement_id=${eventId}`);
+                    data = await response.json();
+                    inscriptions = data.inscriptions;
+                    document.getElementById('totalCotisation').textContent = data.total_cotisation_event+" FCFA";
+
+                    // Vérifier si inscriptions est bien un tableau
+                    if (!Array.isArray(inscriptions)) {
+                        console.error("Données reçues ne sont pas un tableau:", inscriptions);
+                        inscriptions = []; // Assurez-vous que `inscriptions` est un tableau vide en cas d'erreur
+                    }
+
+                    displayInscriptions();
+                } catch (error) {
+                    console.error("Erreur de chargement des inscriptions:", error);
+                }
+            }
+
+            // Fonction d'affichage des inscriptions
+            function displayInscriptions() {
+                const tableBody = document.getElementById('inscriptionsTable');
+                // const totalCotisation = document.getElementById('totalCotisation');
+                tableBody.innerHTML = '';
+                // totalCostisation.innerText = '0 FCFA';
+
+                // Application des filtres
+                const searchInput = document.getElementById('searchMembreInput').value.toLowerCase();
+                const filterStatus = document.getElementById('filterStatus').value;
+
+                let filteredInscriptions = inscriptions.filter(inscription => {
+                    const fullname = inscription.membre.fullname.toLowerCase();
+                    const email = inscription.membre.email.toLowerCase();
+                    const telephone = inscription.membre.telephone.toLowerCase();
+                    const matchesSearch = fullname.includes(searchInput) || email.includes(searchInput) || telephone.includes(searchInput);
+                    const matchesStatus = filterStatus === "" || 
+                        (filterStatus === "confirmé" && !inscription.en_liste_attente) ||
+                        (filterStatus === "liste_attente" && inscription.en_liste_attente);
+
+                    return matchesSearch && matchesStatus;
+                });
+
+                // Pagination
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const paginatedInscriptions = filteredInscriptions.slice(startIndex, startIndex + itemsPerPage);
+
+                paginatedInscriptions.forEach((inscription, index) => {
+                    const row = `<tr>
+                        <td>${startIndex + index + 1}</td>
+                        <td>${inscription.membre.fullname}</td>
+                        <td>${inscription.membre.email}</td>
+                        <td>${inscription.membre.telephone}</td>
+                        <td>${inscription.total_cotisation} FCFA</td>
+                        <td><input type="checkbox" class="inscription-checkbox" data-id="${inscription.membre_id}"></td>
+                    </tr>`;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+
+                setupPagination(filteredInscriptions.length);
+            }
+            
+
+            // Gestion de la pagination
+            function setupPagination(totalItems) {
+                const pagination = document.getElementById('pagination');
+                pagination.innerHTML = '';
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageItem = `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" onclick="changePage(${i})">${i}</a>
+                    </li>`;
+                    pagination.insertAdjacentHTML('beforeend', pageItem);
+                }
+            }
+
+            function changePage(page) {
+                currentPage = page;
+                displayInscriptions();
+            }
+
+            function exportTableToCSV() {
+                let csv = 'Numéro,Nom Complet,Statut,Montant Cotisé\n';
+                inscriptions.forEach((inscription, index) => {
+                    csv += `${index + 1},"${inscription.membre.fullname}",${inscription.en_liste_attente ? 'En liste d\'attente' : 'Confirmé'},${inscription.total_cotisation} FCFA\n`;
+                });
+                
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'inscriptions.csv';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+
+            function exportTableToPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text("Liste des Inscriptions", 10, 10);
+
+                let y = 20;
+                inscriptions.forEach((inscription, index) => {
+                    const row = `${index + 1}. ${inscription.membre.fullname} - ${inscription.en_liste_attente ? 'En liste d\'attente' : 'Confirmé'} - ${inscription.total_cotisation} FCFA`;
+                    doc.text(row, 10, y);
+                    y += 10;
+                });
+
+                doc.save("inscriptions.pdf");
+            }
+
+            // Enregistrer les cotisations sélectionnées
+            async function enregistrerCotisations() {
+                const selectedIds = Array.from(document.querySelectorAll('.inscription-checkbox:checked'))
+                    .map(cb => cb.getAttribute('data-id'));
+                const montant = document.getElementById('montantCotisation').value;
+                const transactionDate = document.getElementById('transactionDate').value;
+
+                if (!montant || selectedIds.length === 0) {
+                    alert("Veuillez sélectionner au moins un membre et entrer un montant.");
+                    return;
+                }
+                const requestBody = {
+                    montant,
+                    membre_ids: selectedIds,
+                    evenement_id: globalEventId,
+                    transaction_date: transactionDate
+                };
+
+                try {
+                    const response = await fetch(`${apiBaseUrl}/cotisations/bulk`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    if (response.ok) {
+                        alert("Cotisations enregistrées avec succès !");
+                        await loadInscripts(globalEventId); // Recharger les inscriptions
+                        document.getElementById('montantCotisation').value = 0;
+                        document.getElementById('transactionDate').value = '';
+                    } else {
+                        alert("Erreur lors de l'enregistrement des cotisations.");
+                    }
+                } catch (error) {
+                    console.error("Erreur lors de l'enregistrement des cotisations:", error);
+                    alert("Une erreur est survenue. Veuillez réessayer.");
+                }
+            }
+
+            // Gestion de la sélection de tous les membres inscrits affichés
+            document.getElementById('selectAll').addEventListener('click', (event) => {
+                const checkboxes = document.querySelectorAll('.inscription-checkbox');
+                checkboxes.forEach(cb => cb.checked = event.target.checked);
+            });
+
+            // Recherche et filtre des participants pour la cotisation
+            document.getElementById('searchMembreInput').addEventListener('input', displayInscriptions);
+            document.getElementById('filterStatus').addEventListener('change', displayInscriptions);
+            document.getElementById('filterStatusMembreInscrit').addEventListener('change', displayMembreInscrit);
+
+            // Lancement de l'enregistrement des cotisations
+            document.getElementById('enregistrerCotisations').addEventListener('click', enregistrerCotisations);
+
+            // Recherche des membres non inscrits à l'évémement
+            document.getElementById('searchNewMembreInput').addEventListener('input', displayMembres);
+
+            // Recherche des membres inscrits à l'évémement
+            document.getElementById('searchMembreInscritInput').addEventListener('input', displayMembreInscrit);
+
+            // lancement d'inscription des membres à l'événement
+            document.getElementById('inscrireMembres').addEventListener('click', inscrireMembres);
+
+            // Initialisation de l'application
+            initializeGlobalEventId();
+
             // Charger les participants à l'initialisation
             loadParticipants();
+            // Rendre les fonctions accessibles globalement
+            window.displayInscriptions = displayInscriptions;
+            window.displayMembreInscrit = displayMembreInscrit;
+            window.displayMembres = displayMembres;
+
+            window.changePage = changePage;
+            window.changePageMembre = changePageMembre;
+            window.changePageMembreInscrit = changePageMembreInscrit;
+
+            window.exportTableToPDF = exportTableToPDF;
+            window.exportTableToCSV = exportTableToCSV;
+            window.exportTableMembreToCSV = exportTableMembreToCSV;
+            window.exportTableMembreToPDF = exportTableMembreToPDF;
+            window.exportMembreTableToPDF = exportMembreTableToPDF;
+            window.exportMembreTableToCSV = exportMembreTableToCSV;
         })();
     </script>
 </body>

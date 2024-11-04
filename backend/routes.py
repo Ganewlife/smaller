@@ -538,6 +538,43 @@ def create_cotisation():
     )
     return jsonify({"message": "Cotisation créée", "cotisation_id": cotisation.id}), 201
 
+
+# Enregistrer plusieurs cotisation en une opation
+@main.route('/cotisations/bulk', methods=['POST'])
+def create_bulk_cotisations():
+    try:
+        data = request.json
+        montant = data.get('montant')
+        membre_ids = data.get('membre_ids')
+        evenement_id = data.get('evenement_id')
+        date_cotisation = data.get('transaction_date')
+
+        if not montant or not membre_ids or not evenement_id:
+            return jsonify({"error": "Données manquantes"}), 400
+        
+        try:
+            montant = float(montant)
+        except ValueError:
+            return jsonify({"error": "Le montant doit être un nombre valide."}), 400
+
+        try:
+            for membre_id in membre_ids:
+                Cotisation.create(
+                    montant=montant,
+                    # date_transaction=datetime.utcnow(),
+                    membre_id=membre_id,
+                    evenement_id=evenement_id,
+                    date_transaction=convertir_date(date_cotisation),
+                )
+            return jsonify({"message": "Cotisations enregistrées avec succès"}), 201
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        # Récupération des erreurs dans les logs pour faciliter le débogage
+        print("Erreur lors de l'enregistrement des cotisations:", str(e))
+        return jsonify({"error": "Une erreur est survenue lors de l'enregistrement des cotisations."}), 500
+
+
 # MAJ  d'une cotisation
 @main.route('/cotisations/<int:cotisation_id>', methods=['PUT'])
 def update_cotisation(cotisation_id):
@@ -839,37 +876,70 @@ def get_membres_non_inscrits():
     membres_inscrits_ids = [i.membre_id for i in Inscription.query.filter_by(active=True, envenement_id=evenement_id).all()]
     membres_disponibles = Membre.query.filter(~Membre.id.in_(membres_inscrits_ids)).all()
 
-    return jsonify([{"id": membre.id, "nom": membre.nom, "fullname":membre.nom+" "+membre.prenom} for membre in membres_disponibles]), 200
+    return jsonify([{"membre_id": membre.id, "nom": membre.nom, "fullname":membre.nom+" "+membre.prenom, "email": membre.email, "telephone":membre.telephone} for membre in membres_disponibles]), 200
+
+""" @main.route('/membres_non_inscrits', methods=['GET'])
+def get_membres_non_inscrits():
+    evenement_id = request.args.get('evenement_id')
+    page = request.args.get('page', 1, type=int)
+    page_size = request.args.get('page_size', 20, type=int)
+
+    if not evenement_id:
+        return jsonify({"error": "L'événement n'est pas spécifié."}), 400
+
+    evenement = Evenement.get_by_id(evenement_id)
+    if not evenement:
+        return jsonify({"error": "L'événement spécifié n'existe pas."}), 404
+
+    # Récupération des membres non inscrits avec pagination
+    membres_inscrits_ids = [i.membre_id for i in Inscription.query.filter_by(active=True, envenement_id=evenement_id).all()]
+    membres_disponibles = Membre.query.filter(~Membre.id.in_(membres_inscrits_ids)).paginate(page=page, per_page=page_size, error_out=False).items
 
 
-# Recuperer lees inscriptions d'un evenement specifique
+    # Retourne les membres avec la clé 'members' pour correspondre à l'attente de JavaScript
+    return jsonify({"members": [{"id": membre.id, "nom": membre.nom, "fullname": membre.nom + " " + membre.prenom} for membre in membres_disponibles]}), 200 """
+
+
 @main.route('/inscriptions', methods=['GET'])
 def get_inscriptions():
     try:
+        print("id de l'venement: ",request.args.get('evenement_id'))
         evenement_id = int(request.args.get('evenement_id'))
     except (TypeError, ValueError):
         return jsonify({"error": "L'ID de l'événement doit être un entier valide."}), 400
 
     try:
         # Rechercher les inscriptions en fonction de l'ID de l'événement
-        inscriptions = Inscription.query.filter_by(envenement_id=evenement_id,active=True).all()
+        inscriptions = Inscription.query.filter_by(envenement_id=evenement_id, active=True).all()
         if not inscriptions:
             return jsonify({"message": "Aucune inscription trouvée pour cet événement."}), 404
         
-        inscriptions_data = [{
-            "id": inscription.id,
-            "membre_id": inscription.membre_id,
-            # "inscription_membre": inscription.inscription_membre,
-            "en_liste_attente": inscription.en_liste_attente,
-            "membre": {
-                "id": inscription.membre.id,
-                "fullname": inscription.membre.nom+" "+inscription.membre.prenom
-            }
-        } for inscription in inscriptions]
+        total_cotisation_event = Cotisation.total_by_event(evenement_id)
+        
+        inscriptions_data = []
+        for inscription in inscriptions:
+            total_cotisation = Cotisation.get_total_by_member_and_event(inscription.membre_id, evenement_id)
+            inscriptions_data.append({
+                "id": inscription.id,
+                "membre_id": inscription.membre_id,
+                "en_liste_attente": inscription.en_liste_attente,
+                "total_cotisation": total_cotisation,
+                "membre": {
+                    "id": inscription.membre.id,
+                    "fullname": inscription.membre.nom + " " + inscription.membre.prenom,
+                    "email": inscription.membre.email,
+                    "telephone": inscription.membre.telephone
+                }
+            })
 
-        return jsonify(inscriptions_data), 200
+        # return jsonify(inscriptions_data), 200
+        return jsonify({
+            "total_cotisation_event": total_cotisation_event,
+            "inscriptions": inscriptions_data
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
     
 
 # Route pour inscrire plusieurs membres à la fois
@@ -878,9 +948,25 @@ def inscrire_multiple_membres():
     data = request.json
     evenement_id = data.get('evenement_id')
     membre_ids = data.get('membre_ids')
+    print('membre ids: ',membre_ids)
 
     if not evenement_id or not membre_ids:
         return jsonify({"error": "Les champs evenement_id et membre_ids sont requis."}), 400
+    
+    # Vérifier que chaque `membre_id` est valide et existe dans la base de données
+    valid_membre_ids = []
+    for membre_id in membre_ids:
+        try:
+            membre_id = int(membre_id)  # Conversion de l'ID en entier
+        except ValueError:
+            return jsonify({"error": f"L'ID du membre `{membre_id}` n'est pas un entier valide."}), 400
+
+        membre = Membre.get_by_id(membre_id)
+        if membre:
+            valid_membre_ids.append(membre_id)
+        else:
+            return jsonify({"error": f"Le membre avec l'ID `{membre_id}` n'existe pas."}), 400
+
 
     evenement = Evenement.get_by_id(evenement_id)
     print('evenement: ', evenement.id)
@@ -915,19 +1001,35 @@ def create_inscription():
         return jsonify({"error": str(e)}), 400
     
 
-# @main.route('/inscriptions/<int:inscription_id>/valider', methods=['POST'])
-# def valider_inscription(inscription_id):
-#     """Route pour valider une inscription."""
-#     inscription = Inscription.query.get(inscription_id)
+@main.route('/inscriptions/<int:inscription_id>/valider', methods=['PUT'])
+def valider_inscription(inscription_id):
+    """Route pour valider une inscription."""
+    inscription = Inscription.get_by_id(inscription_id)
 
-#     if not inscription:
-#         return jsonify({"message": "Inscription non trouvée."}), 404
+    if not inscription:
+        return jsonify({"message": "Inscription non trouvée."}), 404
 
-#     try:
-#         inscription.valider_inscription()
-#         return jsonify({"message": "Inscription validée avec succès."}), 200
-#     except ValueError as e:
-#         return jsonify({"message": str(e)}), 400
+    try:
+        inscription.valider_inscription()
+        return jsonify({"message": "Inscription validée avec succès."}), 200
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
+    
+    
+@main.route('/inscriptions/<int:inscription_id>/supprimer', methods=['DELETE'])
+def supprimer_inscription(inscription_id):
+    """Route pour supprimer une inscription."""
+    inscription = Inscription.get_by_id(inscription_id)
+
+    if not inscription:
+        return jsonify({"message": "Inscription non trouvée."}), 404
+
+    try:
+        inscription.delete()  # Supposez que vous avez une méthode delete() dans Inscription
+        return jsonify({"message": "Inscription supprimée avec succès."}), 200
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+
     
     
 # @main.route('/inscriptions/<int:inscription_id>/ajouter_liste_attente', methods=['POST'])

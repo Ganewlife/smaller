@@ -19,7 +19,31 @@ function createWindow() {
 // Fonction pour créer la fenêtre de détails
 function createDetailWindow(eventId) {
     if (detailWindow) {
-        detailWindow.focus();
+        // detailWindow.focus();
+        detailWindow.on('closed', () => {
+            // Une fois la fenêtre fermée, créez une nouvelle fenêtre
+            detailWindow = new BrowserWindow({
+                width: 800,
+                height: 600,
+                webPreferences: {
+                    preload: path.join(__dirname, 'preload.js'),
+                    contextIsolation: true, // Assurez-vous que c'est activé
+                    nodeIntegration: false, // Toujours désactiver pour la sécurité
+                },
+            });
+            detailWindow.loadFile('src/evenement_details.html'); // Assurez-vous que ce fichier existe
+            detailWindow.on('closed', () => {
+                detailWindow = null;
+            });
+
+            // Passer l'ID de l'événement à la nouvelle fenêtre des détails
+            detailWindow.webContents.on('did-finish-load', () => {
+                detailWindow.webContents.send('load-event-details', eventId);
+            });
+        });
+
+        // Fermer la fenêtre existante
+        detailWindow.close();
     } else {
         detailWindow = new BrowserWindow({
             width: 800,

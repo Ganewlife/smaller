@@ -623,7 +623,26 @@ class Cotisation(Transaction):
         total = db.session.query(db.func.sum(cls.montant)).filter_by(evenement_id=event_id, active=True).scalar()
         return total or 0 
 
-        
+    @classmethod
+    def get_total_by_member_and_event(cls, membre_id, event_id):
+        """Calculer le montant total des cotisations pour un membre et un événement spécifique."""
+        total = db.session.query(db.func.sum(cls.montant)).filter_by(
+            membre_id=membre_id,
+            evenement_id=event_id,
+            active=True
+        ).scalar()
+        return total or 0
+    
+    @classmethod
+    def total_by_event(cls, event_id):
+        """Calculer le montant total des cotisations pour un événement."""
+        total = db.session.query(db.func.sum(cls.montant)).filter_by(
+            evenement_id=event_id,
+            active=True
+        ).scalar()
+        return total or 0
+    
+    
 class Don(BaseModel):
     __tablename__ = 'dons'
 
