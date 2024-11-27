@@ -37,6 +37,9 @@
                             <a class="nav-link" href="donateur.html">Donateur</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="taches.html">Taches</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="dashboard.html">Tableau de bord</a>
                         </li>
                     </ul>
@@ -364,7 +367,6 @@
                 }
             }
 
-
             // Fonction pour pour appeler la fenetre de details d'un evenement
             document.addEventListener('click', (event) => {
                 if (event.target.classList.contains('details-btn')) {
@@ -399,7 +401,7 @@
                             <td>${evenement.nb_participants_max}</td>
                             <td>${evenement.est_recurrent ? 'Oui' : 'Non'}</td>
                             <td>${evenement.recurrence_details}</td>
-                            <td>
+                            <td class="">
                                 <button class="btn btn-primary btn-sm" onclick="window.api.loadEvenementForUpdate(${evenement.id})">Modifier</button>
                                 <button class="btn btn-danger btn-sm" onclick="window.api.deleteEvenement(${evenement.id})">Supprimer</button>
                                 ${evenement.est_recurrent ? `

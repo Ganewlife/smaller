@@ -10,7 +10,8 @@
     
     <!-- Custom Styles -->
     <!-- <link rel="stylesheet" href="styles.css"> -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js" defer></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js" defer></script> -->
+    <script src="renderer/ajax_libs_jspdf_2.4.0_jspdf.umd.min.js" defer></script>
 </head>
 <body>
     <header>
@@ -252,7 +253,8 @@
     </div>
 
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+   
+    <script src="renderer/ajax_libs_bootstrap_5.3.0_js_bootstrap.bundle.min.js"></script>
 
     <!-- Renderer JS -->
     <!-- <script src="renderer/renderer.js" defer></script> -->
@@ -327,79 +329,6 @@
                     alert("Une erreur s'est produite lors du chargement des détails de l'événement.");
                 }
             }
-    
-            /* async function loadMembreInscrit() {
-                try {
-                    const response = await fetch(`${apiBaseUrl}/inscriptions?evenement_id=${globalEventId}`);
-                    
-                    if (!response.ok) {
-                        // Récupérer le message d'erreur du serveur
-                        const errorData = await response.json(); // Essayer de lire la réponse comme JSON
-                        throw new Error(errorData.error || "Erreur lors du chargement des inscriptions"); // Utiliser le message d'erreur ou un message par défaut
-                    }
-
-                    const inscriptions = await response.json();
-                    inscriptionTableBody.innerHTML = ''; // Nettoyer le tableau avant de le remplir
-
-                    
-                    // Fonction pour afficher les inscriptions en fonction du filtre sélectionné
-                    function renderFilteredInscriptions(filter) {
-                        inscriptionTableBody.innerHTML = ''; // Nettoyer le tableau avant de le remplir
-                        
-                        inscriptions
-                            .filter(inscription => {
-                                if (filter === 'validated') {
-                                    return !inscription.en_liste_attente;
-                                } else if (filter === 'waiting') {
-                                    return inscription.en_liste_attente;
-                                }
-                                return true;
-                            })
-                            .forEach(inscription => {
-                                const row = document.createElement('tr');
-                                row.innerHTML = `
-                                    <td>${inscription.id}</td>
-                                    <td>${inscription.membre.fullname}</td>
-                                    <td>${inscription.en_liste_attente ? 'En liste d\'attente' : 'Validée'}</td>
-                                    <td>
-                                        ${inscription.en_liste_attente ? `<button class="btn btn-success btn-sm" data-inscription-id="${inscription.id}">Valider</button>` : ''}
-                                        <button class="btn btn-warning btn-sm" data-inscription-id="${inscription.id}">Supprimer</button>
-                                    </td>
-                                `;
-                                inscriptionTableBody.appendChild(row);
-                            });
-
-                        // Gestion des événements pour chaque bouton de validation
-                        document.querySelectorAll('.btn-success').forEach(button => {
-                            button.addEventListener('click', async (event) => {
-                                const inscriptionId = event.currentTarget.getAttribute('data-inscription-id');
-                                await validateInscription(inscriptionId);
-                            });
-                        });
-
-                        // Gestion des événements pour chaque bouton de suppression
-                        document.querySelectorAll('.btn-warning').forEach(button => {
-                            button.addEventListener('click', async (event) => {
-                                const inscriptionId = event.currentTarget.getAttribute('data-inscription-id');
-                                await removeInscription(inscriptionId);
-                            });
-                        });
-                    }
-
-                    // Initialement, afficher toutes les inscriptions
-                    renderFilteredInscriptions('all');
-
-                    // Ajouter un écouteur d'événement pour le changement de filtre
-                    document.getElementById('filterSelect').addEventListener('change', (event) => {
-                        const filter = event.target.value;
-                        renderFilteredInscriptions(filter);
-                    });
-
-                } catch (error) {
-                    console.error("Erreur:", error);
-                    alert(error.message);
-                }
-            } */
             
             async function loadMembreInscrit(eventId) {
                 try {
@@ -532,7 +461,7 @@
             }
 
             function exportTableMembreToCSV() {
-                let csv = 'Numéro,Nom Complet,Email, Téléphone, Statut,\n';
+                let csv = '\uFEFFNuméro,Nom Complet,Email, Téléphone, Statut,\n';
                 membresInscrits.forEach((membre, index) => {
                     csv += `${index + 1},"${membre.membre.fullname}","${membre.membre.email}", "${membre.membre.telephone}", ${membre.en_liste_attente ? 'En liste d\'attente' : 'Confirmé'},\n`;
                 });
@@ -635,7 +564,7 @@
 
             // Exportation des données
             function exportMembreTableToCSV() {
-                let csv = 'Numéro,Nom Complet\n';
+                let csv = '\uFEFFNuméro,Nom Complet\n';
                 membres.forEach((membre, index) => {
                     csv += `${index + 1},"${membre.fullname}"\n`;
                 });
@@ -963,7 +892,7 @@
             }
 
             function exportTableToCSV() {
-                let csv = 'Numéro,Nom Complet,Statut,Montant Cotisé\n';
+                let csv = '\uFEFFNuméro,Nom Complet,Statut,Montant Cotisé\n';
                 inscriptions.forEach((inscription, index) => {
                     csv += `${index + 1},"${inscription.membre.fullname}",${inscription.en_liste_attente ? 'En liste d\'attente' : 'Confirmé'},${inscription.total_cotisation} FCFA\n`;
                 });

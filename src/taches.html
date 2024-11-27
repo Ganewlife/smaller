@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscptions</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="renderer/bootstrap513.min.css">
+    
+    <!-- Custom Styles -->
+    <!-- <link rel="stylesheet" href="styles.css"> -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js" defer></script> -->
+    <script src="renderer/ajax_libs_jspdf_2.4.0_jspdf.umd.min.js" defer></script>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="index.html">Assopilot</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">Accueil</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="login.html">Connexion</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="categorie.html">Categorie</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="evenement.html">Evénement</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex flex-row overflow-auto" style="gap: 1rem;">  
+                    <!-- Colonne "À faire" -->
+                    <div class="card" style="width: 25%; min-width: 250px;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>À faire</span>
+                            <button class="btn btn-sm btn-primary" onclick="addTask('a-faire')">+</button>
+                        </div>
+                        <div class="card-body" id="a-faire" style="padding: 8px; min-height: 150px;">
+                            <!-- Tâches ajoutées dynamiquement ici -->
+                        </div>
+                    </div>
+    
+                    <!-- Colonne "En cours" -->
+                    <div class="card" style="width: 25%; min-width: 250px;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>En cours</span>
+                            <button class="btn btn-sm btn-primary" onclick="addTask('en-cours')">+</button>
+                        </div>
+                        <div class="card-body" id="en-cours" style="padding: 8px; min-height: 150px;">
+                            <!-- Tâches ajoutées dynamiquement ici -->
+                        </div>
+                    </div>
+    
+                    <!-- Colonne "En attente" -->
+                    <div class="card" style="width: 25%; min-width: 250px;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>En attente</span>
+                            <button class="btn btn-sm btn-primary" onclick="addTask('en-attente')">+</button>
+                        </div>
+                        <div class="card-body" id="en-attente" style="padding: 8px; min-height: 150px;">
+                            <!-- Tâches ajoutées dynamiquement ici -->
+                        </div>
+                    </div>
+    
+                    <!-- Colonne "Bloquée" -->
+                    <div class="card" style="width: 25%; min-width: 250px;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>Bloquée</span>
+                            <button class="btn btn-sm btn-primary" onclick="addTask('bloquée')">+</button>
+                        </div>
+                        <div class="card-body" id="bloquée" style="padding: 8px; min-height: 150px;">
+                            <!-- Tâches ajoutées dynamiquement ici -->
+                        </div>
+                    </div>
+    
+                    <!-- Colonne "En retard" -->
+                    <div class="card" style="width: 25%; min-width: 250px;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>En retard</span>
+                            <button class="btn btn-sm btn-primary" onclick="addTask('en-retard')">+</button>
+                        </div>
+                        <div class="card-body" id="en-retard" style="padding: 8px; min-height: 150px;">
+                            <!-- Tâches ajoutées dynamiquement ici -->
+                        </div>
+                    </div>
+    
+                    <!-- Colonne "Complétée" -->
+                    <div class="card" style="width: 25%; min-width: 250px;">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>Complétée</span>
+                            <button class="btn btn-sm btn-primary" onclick="addTask('complétée')">+</button>
+                        </div>
+                        <div class="card-body" id="complétée" style="padding: 8px; min-height: 150px;">
+                            <!-- Tâches ajoutées dynamiquement ici -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    <style>
+        .container-fluid {
+        padding: 0 15px;
+    }
+
+    .d-flex.flex-row {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .card {
+        flex: 0 0 auto; /* Empêche la carte de se redimensionner */
+    }
+
+    .card-header {
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
+
+    .card-body {
+            overflow-y: auto;
+            max-height: calc(100vh - 150px); /* Ajuste la hauteur */
+    }
+    </style>
+    <!-- .card-body {
+        overflow-y: auto;
+        max-height: 250px; /* Hauteur maximale des tâches */
+    } -->
+
+    <script src="renderer/ajax_libs_bootstrap_5.3.0_js_bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <!-- Renderer JS -->
+    <!-- <script src="renderer/renderer.js" defer></script> -->
+    <script defer>
+        (function() {
+            function adjustCardBodyHeight() {
+                const headerHeight = document.querySelector('.card-header')?.offsetHeight || 0;
+                const availableHeight = window.innerHeight - headerHeight - 50; // Ajustez le padding/marges selon vos besoins
+                const cardBody = document.querySelector('.card-body');
+                if (cardBody) {
+                    cardBody.style.maxHeight = `${availableHeight}px`;
+                }
+            }
+
+            // Ajuste la hauteur au chargement et au redimensionnement de la fenêtre
+            window.addEventListener('load', adjustCardBodyHeight);
+            window.addEventListener('resize', adjustCardBodyHeight);
+
+            const apiBaseUrl = 'http://localhost:5000/api';
+            let globalEventId = null
+            let membres = []
+            let tasks = [];
+            // Initialisation de l'ID de l'événement
+            async function initializeGlobalEventId() {
+                try {
+                    globalProjetId = await window.api.getProjetId();
+                    // console.log("id du projet cible est: ",globalProjetId);
+                } catch (error) {
+                    console.error("Erreur lors de la récupération de l'ID de l'événement:", error);
+                }
+            }
+
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                if (!dateString) {
+                    return ""; // Retourne "N/A" si la date est invalide ou vide
+                }else{
+                    return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }).format(date);
+                }
+            }
+
+            // Charger les taches disponibles pour le projet
+            async function getTasks() {
+                try {
+                    projet_id = await window.api.getProjetId();
+                    const response = await fetch(`${apiBaseUrl}/projets/${projet_id}/taches`);
+                    tasks = await response.json();
+
+                    // Vérifier si `dons` est bien un tableau
+                    if (!Array.isArray(tasks)) {
+                        console.error("Données reçues ne sont pas un tableau:", tasks);
+                        tasks = [];
+                    }
+
+                } catch (error) {
+                    console.error("Erreur de chargement des projets:", error);
+                }
+            }
+
+            // Fonction utilitaire pour supprimer tous les champs d'entrée existants
+            function closeAllSearchFields() {
+                const containers = document.querySelectorAll('[id^="assign-member-container-"]');
+                containers.forEach(container => {
+                    container.style.display = 'none';  // Masque tous les champs de recherche
+                });
+
+                const task_containers = document.querySelectorAll('.input-card');
+                task_containers.forEach(container => {
+                    container.style.display = 'none';  // Masque tous les champs de recherche
+                });
+            }
+
+            async function addTask(status) {
+                // Supprime les champs de saisie existants pour éviter la duplication
+                closeAllSearchFields();
+                const column = document.getElementById(status);
+                if (!column) return;
+
+
+                // Créer un champ d'entrée pour saisir le nom de la tâche
+                const inputCard = document.createElement("div");
+                inputCard.className = "card mb-1 input-card"; // Classe spécifique pour identifier les entrées en cours
+                inputCard.innerHTML = `
+                    <div class="card-body">
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            placeholder="Nom de la tâche" 
+                            id="new-task-input-${status}" 
+                            onblur="saveTask('${status}')">
+                    </div>
+                `;
+
+                column.prepend(inputCard);
+
+                // Focus automatique sur le champ de saisie
+                const inputField = document.getElementById(`new-task-input-${status}`);
+                inputField.focus();
+            }
+
+            async function saveTask(status) {
+                const input = document.getElementById(`new-task-input-${status}`);
+                if (!input || !input.value.trim()) {
+                    // Supprimer le champ si aucune valeur n'est saisie
+                    closeAllSearchFields();
+                    return;
+                }
+
+                try {
+                    const projet_id = await window.api.getProjetId();
+                    const taskName = input.value.trim();
+
+                    // Requête pour créer la tâche
+                    const response = await fetch(`${apiBaseUrl}/projets/${projet_id}/taches`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            nom: taskName,
+                            statut: status.toUpperCase().replace("-", "_"),
+                        }),
+                    });
+
+                    if (response.ok) {
+                        // Recharger les tâches après création
+                        loadTasks();
+                    } else {
+                        console.error("Erreur lors de la création de la tâche :", await response.json());
+                        alert("Erreur lors de la création de la tâche. Veuillez réessayer.");
+                    }
+                } catch (error) {
+                    console.error("Erreur lors de la création de la tâche :", error);
+                    alert("Une erreur s'est produite. Veuillez vérifier votre connexion.");
+                }
+
+                // Supprimer le champ après soumission
+                closeAllSearchFields();
+            }
+
+            // Fonction pour afficher le Date Picker pour définir les deux dates
+            function showDateRangePicker(taskId) {
+                const dateInput = document.getElementById(`date-range-${taskId}`);
+
+                // Initialisation de Flatpickr en mode "Range"
+                flatpickr(dateInput, {
+                    mode: "range", // Mode "plage de dates"
+                    dateFormat: "d/m/Y", // Format JJ/MM/AAAA
+                    defaultDate: [
+                        dateInput.dataset.dateDebut || null,
+                        dateInput.dataset.dateFin || null,
+                    ], // Charge les dates existantes
+                    onClose: function (selectedDates, dateStr) {
+                        if (selectedDates.length === 2) {
+                            // Si deux dates sont sélectionnées, mise à jour des données
+                            const [dateDebut, dateFin] = selectedDates.map((date) =>
+                                date.toISOString().split("T")[0]
+                            );
+
+                            updateTaskDates(taskId, dateDebut, dateFin);
+                        }
+                    },
+                });
+
+                // Ouvre le Date Picker
+                dateInput._flatpickr.open();
+            }
+
+
+
+            async function updateTaskDates(taskId, dateDebut, dateFin) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/taches/${taskId}/update-date`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            dateDebut: dateDebut,
+                            dateFin: dateFin,
+                        }),
+                    });
+
+                    if (response.ok) {
+                        console.log("Dates mises à jour avec succès !");
+                        alert(`Dates mises à jour avec succès !`);
+                        loadTasks();
+                    } else {
+                        console.error("Erreur lors de la mise à jour des dates");
+                    }
+                } catch (error) {
+                    console.error("Erreur lors de la mise à jour des dates", error);
+                    alert("Une erreur s'est produite. Veuillez vérifier votre connexion.");
+                }
+            }
+
+            function renderTask(task) {
+                const card = document.createElement("div");
+                card.className = "card mb-1";
+                card.draggable = true;
+                card.dataset.id = task.id;
+
+                // Gestion du drag & drop
+                card.addEventListener("dragstart", (event) => {
+                    event.dataTransfer.setData("text/plain", task.id);
+                });
+
+                // Limite des avatars affichés
+                const maxAvatars = 5;
+                const membersToShow = task.membres.slice(0, maxAvatars); // Maximum 5 membres affichés
+                const hasMoreMembers = task.membres.length > maxAvatars;
+
+                // HTML structuré pour le rendu
+                card.innerHTML = `
+                    <div class="card-body">
+                        <div class="task-title mb-2 text-truncate" style="max-width: 100%;" title='${task.nom}'>
+                            <strong>${task.nom}</strong>
+                        </div>
+
+                        <!-- Priorité et progression -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <!-- Priorité -->
+                            <div class="position-relative">
+                                <!--<span 
+                                    class="badge bg-${getPriorityColor(task.priorite)} priority-badge" 
+                                    title="Cliquez pour changer la priorité" 
+                                    onclick="showPriorityDropdown(${task.id}, '${task.priorite}')">
+                                    ${task.priorite}
+                                </span>-->
+                                <span 
+                                    id="priority-badge-${task.id}" 
+                                    class="badge priority-badge bg-${getPriorityColor(task.priorite)} text-white"
+                                    onclick="togglePriorityDropdown(${task.id})">
+                                    ${task.priorite}
+                                </span>
+
+                                <!-- Liste déroulante des priorités 
+                                <select 
+                                    id="priority-dropdown-${task.id}" 
+                                    class="form-select form-select-sm position-absolute" 
+                                    style="display: none; top: 0; left: 0; z-index: 999; width: 100%;" 
+                                    onchange="updateTaskPriority(${task.id}, this.value)">
+                                    <option value="Basse">Basse</option>
+                                    <option value="Moyenne">Moyenne</option>
+                                    <option value="Élevée">Élevée</option>
+                                </select>-->
+                                
+                                <div 
+                                    id="priority-dropdown-${task.id}" 
+                                    class="dropdown-menu shadow-sm p-2" style="display: none; position: absolute; top: 100%; left: 0; z-index: 1050;">
+                                    <button class="dropdown-item" onclick="updateTaskPriority(${task.id}, 'Basse')">
+                                        <span class="badge bg-success me-2"></span> Basse
+                                    </button>
+                                    <button class="dropdown-item" onclick="updateTaskPriority(${task.id}, 'Moyenne')">
+                                        <span class="badge bg-primary me-2"></span> Moyenne
+                                    </button>
+                                    <button class="dropdown-item" onclick="updateTaskPriority(${task.id}, 'Élevée')">
+                                        <span class="badge bg-danger me-2"></span> Élevée
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Progression -->
+                            <div class="progress" style="cursor: pointer; height: 5px; flex-grow: 1; margin-left: 10px;" title="Cliquez pour modifier la progression ${task.progression}%" onclick="showProgressInput(event, ${task.id})">
+                                <div class="progress-bar" role="progressbar" style="width: ${task.progression}%" 
+                                    aria-valuenow="${task.progression}" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+
+                            <!-- Champ d'entrée pour modifier la progression -->
+                            <div id="progress-input-${task.id}" class="position-absolute d-none bg-white border rounded p-2 shadow">
+                                <input type="number" class="form-control form-control-sm" min="0" max="100" 
+                                    placeholder="Progression (%)" value="${task.progression}" 
+                                    onblur="updateTaskProgress(${task.id}, this.value)">
+                            </div>
+                        </div>
+
+                        <!-- Membres assignés et bouton d'assignation -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <!-- Liste des membres assignés -->
+                            <div class="mt-2 d-flex align-items-center">
+                                ${membersToShow
+                                    .map(
+                                        (member) => `
+                                            <!--<img 
+                                                src="${member.avatar}" 
+                                                class="rounded-circle me-1" 
+                                                style="width: 24px; height: 24px;" 
+                                                title="${member.name}" 
+                                                alt="${member.fullname}" 
+                                            />-->
+                                            <i 
+                                                class="bi bi-person-circle me-1" 
+                                                style="font-size: 24px;" 
+                                                title="${member.fullname}"
+                                            ></i>
+                                        `
+                                    )
+                                    .join("")}
+                                ${hasMoreMembers ? `<span class="text-muted">+${task.membres.length - maxAvatars}</span>` : ""}
+                            </div>
+                            <!-- Boutons d'actions -->
+                            <button class="btn btn-icon-only me-2" onclick="showAssignMemberInput(${task.id})" title="Assigner un membre">
+                                    <i class="bi bi-person-plus"></i>
+                            </button>
+                        </div>
+                        <!-- Dates de la tâche et icône calendrier -->
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <!-- Dates -->
+                            <!--<div>
+                                <span class="text-muted me-2" title="Date de début">Début: ${formatDate(task.date_debut) || "N/A"}</span>
+                                <span class="text-muted" title="Date de fin">Fin: ${formatDate(task.date_fin) || "N/A"}</span>
+                            </div>-->
+                            <div>
+                                <span class="text-muted me-2" title="Date de début">
+                                    <span id="date-display-debut-${task.id}">${formatDate(task.date_debut) || ""}</span>
+                                    &nbsp- 
+                                </span>
+                                <span class="text-muted" title="Date de fin">
+                                    <span id="date-display-fin-${task.id}">${formatDate(task.date_fin) || ""}</span>
+                                </span>
+                            </div>
+                            <!-- Icône calendrier -->
+                            <button class="btn btn-icon-only" onclick="showDateRangePicker(${task.id})" title="Définir les dates de début et de fin">
+                                <i class="bi bi-calendar"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Conteneur pour afficher le champ d'entrée filtré -->
+                        <div id="assign-member-container-${task.id}" style="display:none;">
+                            <input 
+                                type="text" 
+                                id="membre-input-${task.id}" 
+                                class="form-control" 
+                                placeholder="Rechercher un membre (email, nom ou prénom)"  
+                                oninput="filterMembers(${task.id})"
+                            />
+                            <ul id="membre-suggestions-${task.id}" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></ul>
+                        </div>
+                        <!-- Champ masqué pour le Date Picker -->
+                        <input
+                            id="date-range-${task.id}"
+                            type="text"
+                            class="form-control"
+                            style="display: none;"
+                            data-date-debut="${task.dateDebut || ""}"
+                            data-date-fin="${task.dateFin || ""}"
+                        />
+                    </div>
+                `;
+
+                return card;
+            }
+
+            // Affiche ou masque le dropdown des priorités pour une tâche
+            window.togglePriorityDropdown = function (taskId) {
+
+                const dropdown = document.getElementById(`priority-dropdown-${taskId}`);
+                const isVisible = dropdown.style.display === 'block';
+                // Masquer tous les dropdowns
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+
+                // Afficher ou masquer le dropdown
+                if (!isVisible) {
+                    dropdown.style.display = 'block';
+
+                    // Écouteur de clic pour fermer uniquement si le clic est en dehors du bouton/dropdown
+                    const outsideClickListener = (event) => {
+                        const isClickInside = dropdown.contains(event.target) || event.target.id === `priority-badge-${taskId}`;
+                        if (!isClickInside) {
+                            dropdown.style.display = 'none';
+                            document.removeEventListener('click', outsideClickListener);
+                        }
+                    };
+
+                    document.addEventListener('click', outsideClickListener);
+                }
+            };
+
+            // Retourne la classe Bootstrap en fonction de la priorité
+            window.getPriorityBadgeClass = function (priority) {
+                switch (priority) {
+                    case 'Basse': return 'bg-success text-white';
+                    case 'Moyenne': return 'bg-primary text-white';
+                    case 'Élevée': return 'bg-danger text-white';
+                    default: return 'bg-secondary text-white';
+                }
+            };
+
+            // Met à jour la priorité de la tâche via une requête API
+            async function updateTaskPriority(taskId, priority) {
+                console.log("task id: ",taskId);
+                console.log("priorite: ",priority);
+                try {
+                    // Envoie la requête PUT au serveur
+                    const response = await fetch(`${apiBaseUrl}/taches/${taskId}`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ priorite: priority }),
+                    });
+
+                    if (!response.ok) {
+                        // throw new Error(`Erreur lors de la mise à jour : ${response.statusText}`);
+                        throw new Error(`Erreur lors de la mise à jour.`);
+                    }
+
+                    const result = await response.json();
+
+                    loadTasks();
+                } catch (error) {
+                    console.error("Erreur :", error.message);
+                }
+            };
+
+            /* // Fonction pour afficher le champ de saisie de progression
+            function showProgressInput(event, taskId) {
+                event.stopPropagation();
+                const input = document.getElementById(`progress-input-${taskId}`);
+                hideAllInteractiveFields(); // Masquer tous les champs actifs
+                input.classList.remove("d-none");
+                input.querySelector("input").focus(); // Focus sur le champ
+            } */
+
+            // Fonction pour masquer tous les champs interactifs
+            function hideAllInteractiveFields() {
+                document.querySelectorAll(".position-absolute").forEach(field => field.classList.add("d-none"));
+            }
+
+            // Affiche le champ d'entrée pour modifier la progression
+            function showProgressInput(event, taskId) {
+                event.stopPropagation(); // Empêche la propagation du clic
+                const inputContainer = document.getElementById(`progress-input-${taskId}`);
+                hideAllInteractiveFields(); // Masque les autres champs interactifs
+                inputContainer.classList.remove("d-none"); // Affiche le champ d'entrée
+                inputContainer.querySelector("input").focus(); // Place le focus sur l'input
+            }
+
+            // Met à jour la progression d'une tâche
+            async function updateTaskProgress(taskId, newProgress) {
+                if (!newProgress || newProgress < 0 || newProgress > 100) {
+                    alert("Veuillez entrer une progression entre 0 et 100.");
+                    return;
+                }
+                try {
+                    const response = await fetch(`${apiBaseUrl}/taches/${taskId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ progression: newProgress })
+                    });
+
+                    if (response.ok) {
+                        hideAllInteractiveFields();
+                        console.log("Dates mises à jour avec succès !");
+                        alert(`Dates mises à jour avec succès !`);
+                        loadTasks();
+                    } else {
+                        console.error("Erreur lors de la mise à jour de progression");
+                    }
+                } catch (error) {
+                    console.error("Erreur lors de la mise à jour de progression de tâche", error);
+                    alert("Une erreur s'est produite. Veuillez vérifier votre connexion.");
+                }
+            }
+
+            // Ajoute un événement pour fermer les champs interactifs au clic ailleurs
+            document.addEventListener("click", hideAllInteractiveFields);
+
+            // Afficher le champ de saisie pour assigner un membre à la tâche
+            function showAssignMemberInput(taskId) {
+                closeAllSearchFields();
+                const container = document.getElementById(`assign-member-container-${taskId}`);
+                container.style.display = 'block';
+            }
+
+            async function loadMembres() {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/all_membres`);
+                    membres = await response.json();
+
+                    // Vérifier si `membres` est bien un tableau
+                    if (!Array.isArray(membres)) {
+                        console.error("Données reçues ne sont pas un tableau:", donateurs);
+                        membres = [];
+                    }
+
+                } catch (error) {
+                    console.error("Erreur de chargement des membres:", error);
+                }
+            }
+
+            // Afficher les suggestions de membre
+            async function filterMembers(taskId) {
+                const inputField = document.getElementById(`membre-input-${taskId}`);
+                const suggestionsList = document.getElementById(`membre-suggestions-${taskId}`);
+                const query = inputField.value.trim().toLowerCase();
+
+                // Réinitialiser la liste des suggestions
+                suggestionsList.innerHTML = '';
+
+                if (!query) return;
+
+                // Récupérer les membres déjà assignés à la tâche
+                let assignedMembers = [];
+                try {
+                    const response = await fetch(`${apiBaseUrl}/taches/${taskId}/membres`);
+                    assignedMembers = await response.json();
+                } catch (error) {
+                    console.error("Erreur lors de la récupération des membres assignés:", error);
+                }
+
+                // Filtrer les membres non assignés correspondant à la recherche
+                const filteredMembres = membres.filter(membre => {
+                    const alreadyAssigned = assignedMembers.some(assigned => assigned.id === membre.id);
+                    return (
+                        !alreadyAssigned &&
+                        (membre.nom.toLowerCase().includes(query) ||
+                        membre.prenom.toLowerCase().includes(query) ||
+                        membre.email.toLowerCase().includes(query))
+                    );
+                });
+
+                // Afficher les suggestions filtrées
+                filteredMembres.forEach(membre => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item list-group-item-action';
+                    listItem.textContent = `${membre.nom} ${membre.prenom} (${membre.email})`;
+                    listItem.onclick = () => assignMemberToTask(taskId, membre.id, membre.nom, membre.prenom);
+                    suggestionsList.appendChild(listItem);
+                });
+            }
+
+            // Assigner un membre à une tâche
+            async function assignMemberToTask(taskId, membreId, membreNom, membrePrenom) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/taches/${taskId}/membres/${membreId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                    });
+
+                    if (response.ok) {
+                        alert(`${membreNom} ${membrePrenom} a été assigné à la tâche avec succès.`);
+                        
+                        // Réinitialiser le champ d'entrée et masquer les suggestions
+                        document.getElementById(`membre-input-${taskId}`).value = '';
+                        document.getElementById(`membre-suggestions-${taskId}`).innerHTML = '';
+                        loadTasks();
+                    } else {
+                        const error = await response.json();
+                        console.error("Erreur lors de l'assignation:", error);
+                        alert("Erreur lors de l'assignation du membre. Veuillez réessayer.");
+                    }
+                } catch (error) {
+                    console.error("Erreur lors de l'assignation du membre:", error);
+                    alert("Une erreur s'est produite. Veuillez vérifier votre connexion.");
+                }
+            }
+
+            // Charger les tâches dans les colonnes
+            async function loadTasks() {
+                await getTasks();
+                const columns = ["a-faire", "en-cours", "en-attente", "bloquée", "complétée"]; // Ajouter "en-attente"
+                columns.forEach((col) => {
+                    const column = document.getElementById(col);
+                    if (column) column.innerHTML = ""; // Réinitialiser les colonnes
+                });
+
+                tasks.forEach((task) => {
+                    const columnId = task.statut.toLowerCase().replace(/ /g, "-");
+                    const column = document.getElementById(columnId);
+                    if (column) {
+                    column.appendChild(renderTask(task));
+                    }
+                });
+                }
+
+            // Détermine la couleur du badge selon la priorité
+            function getPriorityColor(priority) {
+            switch (priority) {
+                case "Élevée":
+                return "danger";
+                case "Moyenne":
+                return "warning";
+                case "Basse":
+                return "success";
+                default:
+                return "secondary";
+            }
+            }
+
+            async function updateTaskStatus(taskId, newStatus) {
+                try {
+                    const projet_id = await window.api.getProjetId();
+                    const response = await fetch(`${apiBaseUrl}/projets/${projet_id}/taches/${taskId}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ statut: newStatus.toUpperCase().replace("-", "_") }),
+                    });
+                    if (response.ok) {
+                        console.log("Statut mis à jour avec succès.");
+                    } else {
+                        console.error("Erreur lors de la mise à jour du statut:", await response.json());
+                    }
+                } catch (error) {
+                    console.error("Erreur lors de la mise à jour du statut:", error);
+                }
+            }
+
+
+            document.querySelectorAll(".task-column").forEach((column) => {
+                // Permettre le dépôt
+                column.addEventListener("dragover", (event) => {
+                    event.preventDefault(); // Autorise le dépôt
+                    column.classList.add("border", "border-primary", "bg-light"); // Effet visuel avec Bootstrap
+                });
+
+                // Supprimer les styles de surbrillance quand on quitte la zone
+                column.addEventListener("dragleave", () => {
+                    column.classList.remove("border", "border-primary", "bg-light");
+                });
+
+                // Déplacer une tâche dans la colonne
+                column.addEventListener("drop", async (event) => {
+                    event.preventDefault();
+                    column.classList.remove("border", "border-primary", "bg-light");
+
+                    const taskId = event.dataTransfer.getData("text/plain"); // Récupère l'ID de la tâche
+                    const newStatus = column.dataset.status; // Nouvel statut basé sur l'attribut `data-status`
+
+                    // Mettre à jour la tâche côté serveur
+                    try {
+                        const response = await fetch(`${apiBaseUrl}/taches/${taskId}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ statut: newStatus }),
+                        });
+
+                        if (response.ok) {
+                            loadTasks(); // Recharge les tâches après le déplacement
+                        } else {
+                            console.error("Erreur lors de la mise à jour de la tâche :", await response.json());
+                        }
+                    } catch (error) {
+                        console.error("Erreur lors de la mise à jour de la tâche :", error);
+                    }
+                });
+            });
+
+
+            /* document.querySelectorAll(".bg-light").forEach((column) => {
+            column.addEventListener("dragover", (event) => {
+                event.preventDefault();
+            });
+
+            column.addEventListener("drop", (event) => {
+                const taskId = event.dataTransfer.getData("text/plain");
+                const taskElement = document.querySelector(`[data-id="${taskId}"]`);
+                if (taskElement) {
+                column.appendChild(taskElement);
+
+                // Mettre à jour le statut de la tâche
+                const task = tasks.find((t) => t.id === parseInt(taskId));
+                if (task) {
+                    task.statut = column.id.replace("-", " ").replace("completee", "Complétée");
+                    console.log(`Tâche mise à jour : ${task.nom} -> ${task.statut}`);
+                }
+                }
+            });
+            });
+
+            document.addEventListener("dragstart", (event) => {
+            if (event.target.classList.contains("card")) {
+                event.dataTransfer.setData("text/plain", event.target.dataset.id);
+            }
+            }); */
+
+
+            window.addTask = addTask;
+            window.filterMembers = filterMembers;
+            window.saveTask = saveTask;
+            window.showAssignMemberInput = showAssignMemberInput;
+            window.showDateRangePicker = showDateRangePicker;
+            window.updateTaskPriority   = updateTaskPriority  ;
+            window.showProgressInput = showProgressInput;
+            window.updateTaskProgress = updateTaskProgress;
+
+            // Initialisation de l'application
+            initializeGlobalEventId();
+            loadTasks();
+            loadMembres();
+        })();
+    </script>
+</body>
+</html>

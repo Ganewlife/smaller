@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Membres, Catégories et Administrateurs</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="renderer/bootstrap513.min.css">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js" defer></script> -->
+    <script src="renderer/ajax_libs_jspdf_2.4.0_jspdf.umd.min.js" defer></script>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="index.html">Assopilot</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">Accueil</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="login.html">Connexion</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="categorie.html">Categorie</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="evenement.html">Evénement</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Gestion des Projets</h1>
+
+        <!-- Formulaire pour ajouter / modifier un projet -->
+        <div class="card my-4">
+            <div class="card-header text-center" id="formTitle">
+                Formulaire de création de projet
+            </div>
+            <div class="card-body">
+                <form id="projetForm">
+                    <input type="hidden" id="projetId">
+                    <div class="mb-3">
+                        <label for="projetNom" class="form-label">Nom du Projet</label>
+                        <input type="text" class="form-control" id="projetNom" name="projetNom" required>
+                        <div class="invalid-feedback">Veuillez entrer le nom du projet.</div>
+                    </div>
+            
+                    <div class="mb-3">
+                        <label for="objectif" class="form-label">Description/Objecti</label>
+                        <textarea class="form-control" id="objectif" name="objectif" rows="3" required></textarea>
+                        <div class="invalid-feedback">Veuillez entrer l'objectif du projet.</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="mb-3 col-md-6">
+                            <label for="startDate" class="form-label">Date de Début</label>
+                            <input type="date" class="form-control" id="startDate" name="startDate" required>
+                            <div class="invalid-feedback">Veuillez sélectionner une date de début.</div>
+                        </div>
+                
+                        <div class="mb-3 col-md-6">
+                            <label for="endDate" class="form-label">Date de Fin</label>
+                            <input type="date" class="form-control" id="endDate" name="endDate" required>
+                            <div class="invalid-feedback">Veuillez sélectionner une date de fin.</div>
+                        </div>
+                    </div>
+                    <!-- <div class="mb-3">
+                        <label for="dueDate" class="form-label">Échéance</label>
+                        <input type="date" class="form-control" id="dueDate" name="dueDate" required>
+                        <div class="invalid-feedback">Veuillez sélectionner une échéance.</div>
+                    </div> -->
+                    <button type="submit" class="btn btn-primary">Créer le Projet</button>
+                </form>
+            </div>
+        </div>
+
+
+        <!-- Liste des projets -->
+        <div class="card my-4">
+            <h5>Liste des Projets</h5>
+            <div class="card-heade d-flex justify-content-between align-items-center">
+                <input class="form-control type="text" id="searchProjetsInput" placeholder="Rechercher projet">
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Exporter
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                        <li><a class="dropdown-item" onclick="exportTableProjetToPDF()">En PDF</a></li>
+                        <li><a class="dropdown-item" onclick="exportTableProjetToCSV()">En CSV</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <td>#</td>
+                                <th>Nom du projet</th>
+                                <th>Date debut</th>
+                                <th>Date de fin</th>
+                                <th>Date échéance</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projetTable">
+                            <!-- Les projets seront chargés ici dynamiquement -->
+                        </tbody>
+                    </table>
+                    <nav aria-label="paginationProjets">
+                        <ul class="pagination justify-content-center" id="paginationProjets"></ul>
+                    </nav>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- Modal pour afficher la description complète -->
+        <div class="modal fade" id="descriptionModal" tabindex="-1" aria-labelledby="descriptionModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="descriptionModalLabel">Description du Don</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="descriptionModalContent"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script> -->
+    <script src="renderer/ajax_libs_bootstrap_5.3.0_js_bootstrap.bundle.min.js"></script>
+
+    <!-- Renderer JS -->
+    <!-- <script src="renderer/renderer.js" defer></script> -->
+    <script defer>
+        (function () {
+            const { ipcRenderer } = require('electron');
+            const apiBaseUrl = 'http://localhost:5000/api';
+            const itemsPerPage = 5;
+            let currentPage = 1;
+            const pageSize = 20;
+            let projets = []
+
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }).format(date);
+            }
+
+            // Fonction pour ajouter ou mettre à jour un prjet
+            async function saveProjet(event) {
+                event.preventDefault();
+                const id = document.getElementById('projetId').value;
+                const nom_projet = document.getElementById('projetNom').value;
+                const objectif = document.getElementById('objectif').value;
+                const date_debut = document.getElementById('startDate').value;
+                const date_fin = document.getElementById('endDate').value;
+
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `${apiBaseUrl}/projets/${id}` : `${apiBaseUrl}/projets`;
+                request_data = { 
+                    nom:nom_projet,
+                    objectifs:objectif,
+                    date_debut:date_debut,
+                    date_fin:date_fin,
+                    date_echeance:date_fin 
+                }
+                try {
+                    await fetch(url, {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(request_data)
+                    });
+                    document.getElementById('projetForm').reset();
+                    document.getElementById('projetId').value = '';
+                    loadProjets();
+                } catch (error) {
+                    console.error("Erreur lors de l'enregistrement du projet:", error);
+                }
+            }
+
+            // Fonction pour charger un projet dans le formulaire pour modification
+            async function loadProjetForUpdate(id) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/projets/${id}`);
+                    const projet = await response.json();
+                    document.getElementById('projetId').value = projet.id;
+                    document.getElementById('projetNom').value = projet.nom;
+                    document.getElementById('objectif').value = projet.objectifs;
+                    document.getElementById('startDate').value = projet.date_debut;
+                    document.getElementById('endDate').value = projet.date_fin;
+                    document.getElementById('formTitle').innerText = 'Modification du projet';
+                    // Rediriger vers la section du formulaire
+                    const targetSection = document.getElementById("projetForm");
+                    if (targetSection) {
+                        targetSection.scrollIntoView({ behavior: "smooth" }); // Défilement fluide
+                    }
+
+                    // Optionnel : Ajouter le hash à l'URL
+                    window.location.hash = "projetForm";
+                } catch (error) {
+                    console.error('Erreur lors du chargement du projet:', error);
+                }
+            }
+
+            // Fonction pour supprimer un projet
+            async function deactivateProjet(id) {
+                try {
+                    await fetch(`${apiBaseUrl}/projets/${id}`, { method: 'PUT' });
+                    loadProjets();
+                } catch (error) {
+                    console.error('Erreur lors de la suppression du projet:', error);
+                }
+            }
+
+            // Fonction pour terminer un projet
+            async function terminerProjet(id) {
+                try {
+                    await fetch(`${apiBaseUrl}/terminer/projets/${id}`, { method: 'PUT' });
+                    loadProjets();
+                } catch (error) {
+                    console.error('Erreur lors de la suppression du projet:', error);
+                }
+            }
+
+            // Charger les dons disponibles pour l'affichage avec filtres et pagination
+            async function loadProjets() {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/projets`);
+                    projets = await response.json();
+
+                    // Vérifier si `dons` est bien un tableau
+                    if (!Array.isArray(projets)) {
+                        console.error("Données reçues ne sont pas un tableau:", projets);
+                        projets = [];
+                    }
+
+                    displayProjets();
+                } catch (error) {
+                    console.error("Erreur de chargement des projets:", error);
+                }
+            }
+
+            document.getElementById('searchProjetsInput').addEventListener('input', () => {
+                currentPage = 1;  // Réinitialise la pagination à la première page de don lors de la recherche
+                displayProjets();
+            });
+
+            // Afficher les projets avec pagination et filtres
+            function displayProjets() {
+                const tableBody = document.getElementById('projetTable');
+                tableBody.innerHTML = '';
+
+                // Application des filtres
+                const searchInput = document.getElementById('searchProjetsInput').value.toLowerCase();
+
+                let filteredProjets = projets.filter(projet => {
+                    const nom = projet.nom.toLowerCase();
+                    const objectifs = projet.objectifs.toLowerCase();
+                    const dateDebut = projet.date_debut.toLowerCase();
+                    const dateFin = projet.date_fin.toLowerCase();
+                    // const dateEcheance = projet.date_echeance.toLowerCase();
+                    return nom.includes(searchInput) || objectifs.includes(searchInput) || dateDebut.includes(searchInput) || dateFin.includes(searchInput);
+                });
+
+                // Pagination
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const paginatedProjets = filteredProjets.slice(startIndex, startIndex + itemsPerPage);
+
+                paginatedProjets.forEach((projet, index) => {
+                    const row = `<tr>
+                        <td>${startIndex + index + 1}</td>
+                        <td>${projet.nom}</td>
+                        <!--<td>${projet.objectifs}</td>-->
+                        <td>${formatDate(projet.date_debut)}</td>
+                        <td>${formatDate(projet.date_fin)}</td>
+                        <td>${projet.date_echeance ? 'Finalisé le ' + formatDate(projet.date_echeance) : 'En cours'  }</td>
+                        <td cmass="d-flex"> 
+                            <button class="details-projet-btn" data-projet-id="${projet.id}">Détails</button>
+                            <button class="btn btn-warning btn-sm" href="#projetForm" onclick="window.api.loadProjetForUpdate(${projet.id})">Modifier</button>&nbsp;&nbsp;
+                            <button class="btn btn-danger btn-sm" onclick="window.api.deactivateProjet(${projet.id})">Supprimer</button>
+                            ${projet.date_echeance ? "": `
+                                <button class="btn btn-link p-0" onclick="window.api.terminerProjet('${projet.id}')">
+                                    Terminer 
+                                </button>
+                            ` }
+                        </td>
+                    </tr>`;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+
+                setupPaginationProjets(filteredProjets.length);
+            }
+
+            function setupPaginationProjets(totalItems) {
+                const pagination = document.getElementById('paginationProjets');
+                pagination.innerHTML = '';
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+                const maxVisiblePages = 5; // Nombre de boutons visibles autour de la page courante
+
+                // Bouton Précédent
+                if (currentPage > 1) {
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageProjets(${currentPage - 1})">Précédent</a>
+                    </li>`);
+                }
+
+                // Calcul des limites d'affichage
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                // Ajustement si on est proche des limites
+                if (endPage - startPage < maxVisiblePages - 1) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+
+                // Bouton pour la première page
+                if (startPage > 1) {
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageProjets(1)">1</a>
+                    </li>`);
+                    if (startPage > 2) {
+                        pagination.insertAdjacentHTML('beforeend', `<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                    }
+                }
+
+                // Boutons pour les pages de projet visibles
+                for (let i = startPage; i <= endPage; i++) {
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" onclick="changePageProjets(${i})">${i}</a>
+                    </li>`);
+                }
+
+                // Bouton pour la dernière page de projet
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        pagination.insertAdjacentHTML('beforeend', `<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                    }
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageProjets(${totalPages})">${totalPages}</a>
+                    </li>`);
+                }
+
+                // Bouton Suivant de don
+                if (currentPage < totalPages) {
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageProjets(${currentPage + 1})">Suivant</a>
+                    </li>`);
+                }
+            }
+
+            function changePageProjets(page) {
+                currentPage = page;
+                displayProjets();
+            }
+
+            // Exporter les projet au format CSV
+            function exportTableProjetToCSV() {
+                let csv = '\uFEFFNuméro,Nom Projet,Date début,Date fin,Echéance\n';
+                projets.forEach((projet, index) => {
+                    csv += `${index + 1},"${projet.nom}","${projet.date_debut}",,${projet.date_fin}"${projet.date_echeance === '' ? 'En cours' : 'Finalisé le '+projet.date_echeance}"\n`;
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'projets.csv';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+
+            // Exporter les projet au format PDF
+            function exportTableProjetToPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text("Liste des projet", 10, 10);
+
+                let y = 20;
+                projets.forEach((projet, index) => {
+                    const row = `${index + 1}. ${projet.nom} - ${projet.date_debut}- ${projet.date_fin} - ${projet.date_echeance === '' ? 'En cours' : 'Finalisé le '+projet.date_echeance} `;
+                    doc.text(row, 10, y);
+                    y += 10;
+                });
+
+                doc.save("projets.pdf");
+            }
+
+            // Fonction pour pour appeler la fenetre de details d'un projet
+            document.addEventListener('click', (event) => {
+                if (event.target.classList.contains('details-projet-btn')) {
+                    const projetId = event.target.getAttribute('data-projet-id');
+                    // console.log(`ID du projet récupéré : ${projetId}`);
+                    // Envoyer un message à main.js pour ouvrir la fenêtre des détails
+                    ipcRenderer.send('open-projet-details', projetId);
+                }
+            });
+
+            // initialiser certains événements
+            document.getElementById('projetForm').addEventListener('submit', saveProjet);
+
+            window.changePageProjets = changePageProjets;
+
+            window.exportTableProjetToCSV = exportTableProjetToCSV;
+            window.exportTableProjetToPDF = exportTableProjetToPDF;
+            window.api = {
+                loadProjetForUpdate,
+                deactivateProjet,
+                terminerProjet
+            }
+            loadProjets()
+        })();
+    </script>
+</body>
+</html>

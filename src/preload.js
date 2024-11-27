@@ -21,11 +21,20 @@ contextBridge.exposeInMainWorld('api', {
         if (validChannels.includes(channel)) {
             ipcRenderer.send(channel, data); // Envoi de l'ID de l'événement
         }
+        const validProjetChannels = ['open-projet-details'];
+        if (validProjetChannels.includes(channel)) {
+            ipcRenderer.send(channel, data); // Envoi de l'ID du projet
+        }
     },
     loadEventDetails: (callback) => {
         ipcRenderer.invoke('get-event-id').then(callback);
     },
-    getEventId: () => ipcRenderer.invoke('get-event-id')
+    getEventId: () => ipcRenderer.invoke('get-event-id'),
+
+    loadProjetDetails: (callback) => {
+        ipcRenderer.invoke('get-projet-id').then(callback);
+    },
+    getProjetId: () => ipcRenderer.invoke('get-projet-id')
     /* // Autres fonctions que vous avez définies
     showAddEvenementModal,
     deleteEvenement,

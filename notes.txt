@@ -148,3 +148,16 @@ SQLITE EPLORER
 -- SQLite
 DELETE FROM inscriptions
 WHERE membre_id NOT IN (SELECT id FROM membres);
+
+
+
+++++++++++++++++++++++++++ A faire ++++++++++++++++++++++=
+
+historique_statuts
+
+budgets
+rapport_financiers
+projet
+taches
+proces_verbaux
+documents

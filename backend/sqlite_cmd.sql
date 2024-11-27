@@ -1,0 +1,4 @@
+-- SQLite
+-- PRAGMA foreign_key_list(rapports_financiers);
+-- PRAGMA table_info(rapports_financiers);
+-- SELECT sql FROM sqlite_master WHERE type='table' AND name='rapports_financiers';

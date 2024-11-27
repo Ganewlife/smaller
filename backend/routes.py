@@ -1,5 +1,5 @@
 from flask import Flask, Blueprint, current_app, request, jsonify, make_response
-from models import Membre, CategorieMembre, Statut, Admin, Donateur, Don, Cotisation, Evenement, Inscription, Participation, Projet, Tache, MembreTache, Budget, RapportFinancier, Document, ProcesVerbal
+from models import Membre, CategorieMembre, Statut, Admin, Donateur, Don, Cotisation, Evenement, Inscription, Participation, Projet, StatutTache, Tache, MembreTache, Budget, RapportFinancier, Document, ProcesVerbal
 # from datetime import datetime
 import os
 import jwt
@@ -7,7 +7,8 @@ import datetime
 from functools import wraps
 from flask import send_from_directory, abort
 from werkzeug.utils import secure_filename
-
+# from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 # Chemin de base où les documents sont sauvegardés
 UPLOAD_DIRECTORY = os.path.join(os.getcwd(), 'uploads')
@@ -433,6 +434,7 @@ def get_all_donateurs():
     return jsonify([{
         "id": donateur.id,
         "nom": donateur.nom,
+        "nom_complet": f"{donateur.nom} {donateur.prenom}",
         "prenom": donateur.prenom,
         "email": donateur.email,
         "telephone": donateur.telephone
@@ -489,41 +491,40 @@ def reactivate_donateur(donateur_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
     
-# Enregistré un don
+    
 @main.route('/dons', methods=['POST'])
 def create_don():
     data = request.json
-    don = Don.create(
-        montant=data['montant'],
-        date_transaction=datetime.strptime(data['date'], '%Y-%m-%d').date(),
-        donateur_id=data['donateur_id']
-    )
-    return jsonify({"message": "Don créé", "don": don.id}), 201
-
-# MAJ don
-@main.route('/dons/<int:don_id>', methods=['PUT'])
-def update_don(don_id):
-    don = Don.get_by_id(don_id)
-    if not don:
-        return jsonify({"message": "Don non trouvé"}), 404
-    
-    data = request.json
-    don.update(
-        montant=data['montant'],
-        date_transaction=datetime.strptime(data['date'], '%Y-%m-%d').date()
-    )
-    return jsonify({"message": "Don mis à jour"})
+    try:
+        don = Don.create(
+            type_don=data['type_don'],
+            montant=data['montant'] if data['type_don'] == 'monétaire' else 0,
+            description=data.get('description', ''),
+            donateur_id=data['donateur_id']
+        )
+        return jsonify({"message": "Don créé avec succès", "don": don.id}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
-# Permet de supprimer un don spécifique.
-@main.route('/dons/<int:don_id>', methods=['DELETE'])
-def delete_don(don_id):
-    don = Don.get_by_id(don_id)
-    if not don:
-        return jsonify({"message": "Don non trouvée"}), 404
-    
-    don.delete()
-    return jsonify({"message": "Don supprimé avec succès"}), 200
+@main.route('/dons', methods=['GET'])
+def get_all_dons():
+    dons = Don.query.filter(Don.active.is_(True)).all()
+    total = sum(don.montant for don in dons if don.type_don == 'monétaire')
+    result = {
+        "dons": [{
+            "id": don.id,
+            "type_don": don.type_don,
+            "montant": don.montant,
+            "description": don.description,
+            "nom_complet": f"{don.donateur.nom} {don.donateur.prenom}",
+            "email": don.donateur.email,
+            "telephone": don.donateur.telephone
+        } for don in dons],
+        "total_monetary_donations": total
+    }
+    return jsonify(result)
+
 
 
 @main.route('/cotisations', methods=['POST'])
@@ -1223,7 +1224,7 @@ def get_membres_presents(event_id):
     return jsonify(membres_presents)
 
 # creer un projet
-@main.route('/projets', methods=['POST'])
+""" @main.route('/projets', methods=['POST'])
 def create_projet():
     data = request.json
     projet = Projet.create(
@@ -1286,7 +1287,7 @@ def delete_tache(tache_id):
         return jsonify({"message": "Tâche non trouvée"}), 404
     
     tache.delete() 
-    return jsonify({"message": "Tâche supprimée"})
+    return jsonify({"message": "Tâche supprimée"}) """
 
 
 # Marquer une tâche comme complétée
@@ -1298,28 +1299,6 @@ def complete_tache(tache_id):
     
     tache.marquer_complete()
     return jsonify({"message": "Tâche marquée comme complétée"})
-
-
-# Les tâches associées à un projet
-@main.route('/projets/<int:projet_id>/taches', methods=['GET'])
-def get_taches_projet(projet_id):
-    projet = Projet.get_by_id(projet_id)
-    result = []
-    
-    for tache in projet.taches:
-        membres = [{'id': membre.id, 'nom': membre.nom, 'prenom': membre.prenom} for membre in tache.membres]
-        result.append({
-            'tache_id': tache.id,
-            'nom': tache.nom,
-            'description': tache.description,
-            'date_debut': tache.date_debut.strftime('%Y-%m-%d'),
-            'date_fin': tache.date_fin.strftime('%Y-%m-%d'),
-            'statut': tache.statut,
-            'updated_at': tache.updated_at.strftime('%Y-%m-%d'),
-            'membres': membres
-        })
-    
-    return jsonify(result)
 
 
 # les tâches assignées à un membre
@@ -1359,7 +1338,7 @@ def suivre_avancement_projet(projet_id):
     avancement = projet.suivre_avancement()
     return jsonify({"avancement": avancement})
 
-# MAJ projet
+""" # MAJ projet
 @main.route('/projets/<int:projet_id>', methods=['PUT'])
 def update_projet(projet_id):
     projet = Projet.query.get(projet_id)
@@ -1384,7 +1363,354 @@ def delete_projet(projet_id):
         return jsonify({"message": "Projet non trouvé"}), 404
     
     projet.delete()  # Assuming `BaseModel` has a delete method
-    return jsonify({"message": "Projet supprimé"})
+    return jsonify({"message": "Projet supprimé"}) """
+
+# Créer un projet
+@main.route('/projets', methods=['POST'])
+def create_projet():
+    data = request.json
+    Projet.create(
+        nom=data['nom'],
+        date_debut=convertir_date(data['date_debut']),
+        date_fin=convertir_date(data['date_fin']),
+        # date_echeance=convertir_date(data.get('date_echeance')),
+        objectifs=data.get('objectifs')
+    )
+
+    return jsonify({"message": "Projet créé avec succès"}), 201
+
+# Récupérer tous les projets
+@main.route('/projets', methods=['GET'])
+def get_projets():
+    projets = Projet.get_all()
+    return jsonify([{
+        "id": p.id,
+        "nom": p.nom,
+        "objectifs": p.objectifs,
+        "date_debut": p.date_debut.strftime('%Y-%m-%d'),
+        "date_fin": p.date_fin.strftime('%Y-%m-%d'),
+        "date_echeance": p.date_echeance.strftime('%Y-%m-%d') if p.date_echeance else p.date_echeance
+    } for p in projets]), 200
+
+# Récupérer un projet par ID
+@main.route('/projets/<int:projet_id>', methods=['GET'])
+def get_projet(projet_id):
+    """ projet = Projet.get_by_id(projet_id)
+    return jsonify(projet.to_dict()), 200 """
+    try:
+        projet = Projet.get_by_id(projet_id)
+        return jsonify({
+            "id": projet.id,
+            "nom": projet.nom,
+            "objectifs": projet.objectifs,
+            "date_debut": projet.date_debut.strftime('%Y-%m-%d'),
+            "date_fin": projet.date_fin.strftime('%Y-%m-%d')
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 404
+
+# Mettre à jour un projet
+@main.route('/projets/<int:projet_id>', methods=['PUT'])
+def update_projet(projet_id):
+    data = request.get_json()
+    # print(f"Requête reçue pour mise à jour : {data}")
+    try:
+        projet = Projet.get_by_id(projet_id)
+        projet.update(
+            nom=data['nom'],
+            date_debut=convertir_date(data['date_debut']),
+            date_fin=convertir_date(data['date_fin']),
+            objectifs=data.get('objectifs')
+        )
+        return jsonify({"message": "Projet mis à jour avec succès"}), 200
+    except Exception as e:
+        # print(f"Erreur : {str(e)}")
+        return jsonify({"error": str(e)}), 400
+    
+# Terminer un projet
+@main.route('/terminer/projets/<int:projet_id>', methods=['PUT'])
+def terminer_projet(projet_id):
+    # data = request.get_json()
+    # print(f"Requête reçue pour mise à jour : {data}")
+    try:
+        projet = Projet.get_by_id(projet_id)
+        projet.update(
+            date_echeance=datetime.datetime.utcnow() 
+        )
+        return jsonify({"message": "Projet mis à jour avec succès"}), 200
+    except Exception as e:
+        print(f"Erreur : {str(e)}")
+        return jsonify({"error": str(e)}), 400
+
+
+# Supprimer un projet
+@main.route('/projets/<int:projet_id>', methods=['DELETE'])
+def delete_projet(projet_id):
+    projet = Projet.get_by_id(projet_id)
+    projet.delete()
+    
+    return jsonify({"message": "Projet supprimé avec succès"}), 204
+
+
+
+
+# Voici les routes pour les tâches :
+# Route pour créer une tâche
+@main.route('/projets/<int:projet_id>/taches', methods=['POST'])
+def create_tache(projet_id):
+    data = request.get_json()
+    
+    # Validation des données reçues
+    if not data or not data.get('nom'):
+        abort(400, description="Veuillez saisir le nom de la tâche.")
+    
+    # Création d'une nouvelle tâche
+    Tache.create(
+        nom=data['nom'],
+        priorite=data.get('priorite', 'Moyenne'),
+        description=data.get('description', ''),
+        date_debut=convertir_date(data.get('date_debut')),
+        date_fin=convertir_date(data.get('date_fin')),
+        date_echeance=convertir_date(data.get('date_echeance')),
+        progression=data.get('progression', 0),
+        statut=StatutTache[data.get('statut', StatutTache.A_FAIRE)],  # Par défaut 'EN_ATTENTE'
+        projet_id=projet_id
+    )
+
+    return jsonify({"message": "Tâche créée avec succès"}), 201
+
+
+# Route pour mettre à jour une tâche (date debut et date fin)
+@main.route('/taches/<int:tache_id>/update-date', methods=['PUT'])
+def update_date_tache(tache_id):
+    data = request.get_json()
+    try:
+        tache = Tache.get_by_id(tache_id)
+
+        tache.update(
+            date_debut = convertir_date(data["dateDebut"]),
+            date_fin = convertir_date(data["dateFin"])
+        )
+
+        return jsonify({"message": "Mise à jour effectuée avec succès"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    
+    
+@main.route('/taches/<int:tache_id>', methods=['PUT'])
+def update_progression_tache(tache_id):
+    data = request.get_json()
+    try:
+        tache = Tache.get_by_id(tache_id)
+        # Vérifiez que des données sont bien envoyées
+        if not data:
+            return jsonify({"error": "Aucune donnée envoyée"}), 400
+        
+        # Mise à jour des informations
+        if 'statut' in data:
+            tache.changer_statut(data['statut'])
+        if 'progression' in data:
+            progression = int(data['progression'])
+            if not isinstance(progression, int) or not (0 <= progression <= 100):
+                return jsonify({"error": "La progression doit être un entier entre 0 et 100"}), 400
+            tache.mettre_a_jour_progression(progression)
+        if 'priorite' in data:
+            tache.changer_priorite(data['priorite'])
+
+        return jsonify({"message": "Mise à jour effectuée avec succès"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+# Récupérer toutes les tâches
+@main.route('/taches', methods=['GET'])
+# Route pour obtenir toutes les tâches
+def get_tasks():
+    tasks = Tache.get_all()
+    tasks_data = [{
+        'id': task.id,
+        'nom': task.nom,
+        'statut': task.statut,
+        'date_debut': task.date_debut,
+        'date_fin': task.date_fin,
+        'date_echeance': task.date_echeance,
+        'progression': task.progression,
+        'priorite': task.priorite
+    } for task in tasks]
+    return jsonify(tasks_data)
+
+# Récupération des tâches associées au projet spécifié
+@main.route('/projets/<int:projet_id>/taches', methods=['GET'])
+def get_taches_projet(projet_id):
+    try:
+        projet = Projet.get_by_id(projet_id)
+        if not projet:
+                abort(404, description="Aucune tâche trouvée pour ce projet.")
+        result = []
+        
+        for tache in projet.taches:
+            membres = [{'id': membre.id, 'nom': membre.nom, 'prenom': membre.prenom, 'fullname': membre.prenom +' '+membre.nom} for membre in tache.membres]
+            result.append({
+                'id': tache.id,
+                'nom': tache.nom,
+                'priorite': tache.priorite,
+                'description': tache.description,
+                'progression': tache.progression,
+                'date_debut': tache.date_debut.strftime('%Y-%m-%d') if tache.date_debut else '',
+                'date_echeance': tache.date_echeance.isoformat() if tache.date_echeance else '',
+                'date_fin': tache.date_fin.strftime('%Y-%m-%d') if tache.date_fin else '',
+                'statut': tache.statut.value,
+                'updated_at': tache.updated_at.strftime('%Y-%m-%d'),
+                'projet': {
+                        'id': tache.projet.id,
+                        'nom': tache.projet.nom
+                    },
+                'membres': membres
+            })
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@main.route('/taches/<int:tache_id>/membres', methods=['GET'])
+def get_assigned_members(tache_id):
+    """
+    Récupère les membres assignés à une tâche spécifique.
+    """
+    try:
+        # Rechercher les membres assignés à cette tâche
+        assigned_members = MembreTache.query.filter_by(tache_id=tache_id, active=True).all()
+
+        # Construire une réponse avec les détails des membres
+        result = []
+        for mt in assigned_members:
+            membre = Membre.query.get(mt.membre_id)
+            if membre:
+                result.append({
+                    "id": membre.id,
+                    "nom": membre.nom,
+                    "prenom": membre.prenom,
+                    "email": membre.email
+                })
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        print(f"Erreur lors de la récupération des membres assignés : {e}")
+        return jsonify({"message": "Erreur interne du serveur"}), 500
+    
+    
+# Récupérer une tâche par ID
+@main.route('/taches/<int:tache_id>', methods=['GET'])
+def get_tache(tache_id):
+    tache = Tache.get_by_id(tache_id)
+    return jsonify(tache.to_dict()), 200
+
+# Mettre à jour une tâche
+@main.route('/taches/<int:tache_id>', methods=['PUT'])
+def update_tache(tache_id):
+    data = request.json
+    tache = Tache.get_by_id(tache_id)
+    Tache.update(
+        nom=data['nom'],
+        description=data.get('description'),
+        date_debut=data['date_debut'],
+        date_fin=data['date_fin'],
+        status=data.get('status', 'en cours')
+    )
+    tache.nom = data['nom']
+    tache.description = data.get('description')
+    tache.date_debut = data['date_debut']
+    tache.date_fin = data['date_fin']
+    tache.status = data.get('status', 'en cours')
+    
+    return jsonify({"message": "Tâche mise à jour avec succès"}), 200
+
+# Supprimer une tâche
+@main.route('/taches/<int:tache_id>', methods=['DELETE'])
+def delete_tache(tache_id):
+    tache = Tache.get_by_id(tache_id)
+    tache.delete(tache)
+    
+    return jsonify({"message": "Tâche supprimée avec succès"}), 204
+
+
+
+
+# Route pour Associer/Dissocier une Tâche à un Membre
+# Associer un membre à une tâche
+@main.route('/taches/<int:tache_id>/membres/<int:membre_id>', methods=['POST'])
+def assign_member_to_task(tache_id, membre_id):
+    print(f"Tentative d'assignation : tache_id={tache_id}, membre_id={membre_id}")
+    try:
+        if MembreTache.query.filter_by(tache_id=tache_id, membre_id=membre_id).first():
+            return jsonify({"error": "Le membre est déjà assigné à cette tâche"}), 400
+
+        MembreTache.create(
+            membre_id=membre_id,
+            tache_id=tache_id
+        )
+        print("Membre assigné avec succès")
+        return jsonify({"message": "Membre associé à la tâche avec succès"}), 201
+
+    except Exception as e:
+        print(f"Erreur lors de l'assignation : {e}")
+        return jsonify({"error": str(e)}), 400
+
+
+# Dissocier un membre d'une tâche
+@main.route('/taches/<int:tache_id>/membres/<int:membre_id>', methods=['DELETE'])
+def remove_member_from_task(tache_id, membre_id):
+    membre_tache = MembreTache.query.filter_by(membre_id=membre_id, tache_id=tache_id).first()
+    if not membre_tache:
+        return jsonify({"error": "Association introuvable"}), 404
+    membre_tache.delete(membre_tache)
+    return jsonify({"message": "Membre dissocié de la tâche avec succès"}), 204
+
+
+# Route pour Créer un Rapport Financier
+@main.route('/rapport', methods=['POST'])
+def creer_rapport():
+    data = request.json
+    RapportFinancier.create(
+        budget_total=data.get('budget_total', 0.0),
+        budget_utilise=data.get('budget_utilise', 0.0)
+    )
+
+    return jsonify({"message": "Rapport créé avec succès"}), 201
+
+
+# Route pour Récupérer un Rapport Financier
+@main.route('/rapport/<int:rapport_id>', methods=['GET'])
+def get_rapport(rapport_id):
+    rapport = RapportFinancier.query.options(joinedload(RapportFinancier.projets).joinedload(Projet.taches)).get(rapport_id)
+    if not rapport:
+        return jsonify({"error": "Rapport introuvable"}), 404
+
+    # Structure les données pour l'export JSON
+    rapport_data = {
+        "date_creation": rapport.created_at.isoformat(),
+        "budget_total": rapport.budget_total,
+        "budget_utilise": rapport.budget_utilise,
+        "solde": rapport.solde,
+        "projets": [
+            {
+                "nom": projet.nom,
+                "budget_alloue": projet.budget_alloue,
+                "budget_utilise": projet.budget_utilise,
+                "solde": projet.solde,
+                "taches": [
+                    {
+                        "nom": tache.nom,
+                        "cout_total": tache.cout_total,
+                        "description": tache.description or ""
+                    } for tache in projet.taches
+                ]
+            } for projet in rapport.projets
+        ]
+    }
+    return jsonify(rapport_data)
 
 
 # créer un Budget

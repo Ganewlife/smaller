@@ -10,6 +10,8 @@
     
     <!-- Custom Styles -->
     <link rel="stylesheet" href="styles.css">
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js" defer></script> -->
+    <script src="renderer/ajax_libs_jspdf_2.4.0_jspdf.umd.min.js" defer></script>
 </head>
 <body>
     <header>
@@ -31,7 +33,13 @@
                             <a class="nav-link" href="categorie.html">Categorie</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="projet.html">Projet</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="evenement.html">Evénement</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="taches.html">Taches</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="dashboard.html">Tableau de bord</a>
@@ -79,12 +87,20 @@
         </div>
 
 
-        <!-- Liste des Membres -->
+        <!-- Liste des Donateurs -->
         <div class="card my-4">
+            <h5>Liste des Donateurs</h5>
             <div class="card-heade d-flex justify-content-between align-items-center">
-                <h5>Liste des Membres</h5>
-                <button class="btn btn-primary m-2" onclick="window.api.showStatutModal()">Ajouter un Statut</button>
-                <button class="btn btn-primary m-2" onclick="window.api.showCategorieModal()">Ajouter une Catégorie</button>
+                <input class="form-control type="text" id="searchDonateurInput" placeholder="Rechercher donateur">
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Exporter
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                        <li><a class="dropdown-item" onclick="exportTableDonateurToPDF()">En PDF</a></li>
+                        <li><a class="dropdown-item" onclick="exportTableDonateurToCSV()">En CSV</a></li>
+                    </ul>
+                </div>
                 <button class="btn btn-primary m-2" onclick="window.api.showAddDonateurModal()">Ajouter un Donateur</button>
             </div>
             <div class="card-body">
@@ -103,8 +119,116 @@
                             <!-- Les donateurs seront chargés ici dynamiquement -->
                         </tbody>
                     </table>
+                    <nav aria-label="paginationDonateurs">
+                        <ul class="pagination justify-content-center" id="paginationDonateurs"></ul>
+                    </nav>
                 </div>
                 
+            </div>
+        </div>
+
+        <div class=card my-4">
+            <div class="card-heade">
+                <h4>Formulaire d'enrégistrément des dons</h4>
+            </div>
+            <div class="card-body m-2">
+                <form id="donForm" class="">
+                    <div class="row">
+                        <!-- Champ Donateur -->
+                        <div class="col-md-4">
+                            <label for="donateur" class="form-label">Donateur</label>
+                            <input type="text" class="form-control" id="donateurInput" placeholder="Rechercher un donateur..." autocomplete="off" required>
+                            <input type="hidden" id="donateurId" name="donateurId" required>
+                            <div id="donateurSuggestions" class="list-group"></div>
+                        </div>
+                
+                        <!-- Sélection du Type de Don -->
+                        <div class="col-md-4">
+                            <label for="type" class="form-label">Type de Don</label>
+                            <select class="form-select" id="type" name="type" required onchange="window.api.toggleDonFields()">
+                                <option value="monétaire">Monétaire</option>
+                                <option value="non-monétaire">Non Monétaire</option>
+                            </select>
+                        </div>
+                
+                        <!-- Champ Montant (pour les dons monétaires uniquement) -->
+                        <div class="col-md-4" id="montantField">
+                            <label for="montant" class="form-label">Montant</label>
+                            <input type="number" class="form-control" id="montant" name="montant" min="0" step="0.01" value="0">
+                        </div>
+                
+                        <!-- Champ Description (pour les dons non monétaires uniquement) -->
+                        <div class="col-md-6 my-4" id="descriptionField">
+                            <textarea class="form-control" id="description" name="description" placeholder="Description du don non monétaire"></textarea>
+                        </div>
+                    </div>
+                </form>
+                <button type="submit" class="btn btn-primary mt-3">Ajouter Don</button>
+            </div>
+        </div>
+
+        <!-- Section pour afficher la liste des dons avec filtres et pagination -->
+        <div class="card my-4">
+            <h4>Liste des Dons</h4>
+            <div class="card-heade d-flex justify-content-between align-items-center">
+                <input type="text" id="searchDonInput" class="form-control" placeholder="Rechercher un donateur, un email ou un type de don...">
+                <div class="">
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Exporter
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                            <li><a class="dropdown-item" onclick="exportTableDonToPDF()">En PDF</a></li>
+                            <li><a class="dropdown-item" onclick="exportTableDonToCSV()">En CSV</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nom Complet</th>
+                            <th>Email</th>
+                            <th>Montant</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="donsTable">
+    
+                    </tbody>
+                </table>
+            </div>
+            <!-- <div id="pagination" class="d-flex justify-content-center mt-3"></div> -->
+            <nav aria-label="paginationDons">
+                <ul class="pagination justify-content-center" id="paginationDons"></ul>
+            </nav>
+        </div>
+        <!-- Total des dons monétaires -->
+        <div class="alert alert-info">
+            <h5>Total des dons monétaires: <span id="totalMontant"></span> FCFA</h5>
+        </div>
+
+        <!-- <button class="btn btn-secondary" id="exportCSV">Exporter en CSV</button>
+        <button class="btn btn-secondary" id="exportPDF">Exporter en PDF</button> -->
+
+
+        <!-- Modal pour afficher la description complète -->
+        <div class="modal fade" id="descriptionModal" tabindex="-1" aria-labelledby="descriptionModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="descriptionModalLabel">Description du Don</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="descriptionModalContent"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -112,39 +236,411 @@
     </div>
 
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script> -->
+    <script src="renderer/ajax_libs_bootstrap_5.3.0_js_bootstrap.bundle.min.js"></script>
 
     <!-- Renderer JS -->
     <!-- <script src="renderer/renderer.js" defer></script> -->
     <script defer>
         (function () {
             const apiBaseUrl = 'http://localhost:5000/api';
+            const itemsPerPage = 5;
+            let currentPage = 1;
+            const pageSize = 20;
+            let donateurs = [];
+            let dons = [];
 
-            // Fonction pour charger tous les donateurs
+            // personalisation du formulaire de don
+            function toggleDonFields() {
+                const typeDon = document.getElementById('type').value;
+                const montantField = document.getElementById('montantField');
+                // const descriptionField = document.getElementById('descriptionField');
+                const montantInput = document.getElementById('montant');
+                const descriptionInput = document.getElementById('description');
+
+                if (typeDon === "monétaire") {
+                    montantField.style.display = "block";
+                    montantInput.required = true;   // Rendre le champ Montant obligatoire
+                    // descriptionField.style.display = "none";
+                    descriptionInput.required = false; // Enlever l'obligation sur Description
+                } else {
+                    montantField.style.display = "blok";
+                    montantInput.required = false;  // Enlever l'obligation sur Montant
+                    descriptionInput.required = true;  // Rendre le champ Description obligatoire
+                    // descriptionField.style.display = "block";
+                }
+            }
+
+
+            // Charger les dons disponibles pour l'affichage avec filtres et pagination
+            async function loadDons() {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/dons`);
+                    data = await response.json();
+                    dons = data.dons;
+                    total_monetary_donations = data.total_monetary_donations;
+                    document.getElementById('totalMontant').textContent = total_monetary_donations;
+
+                    // Vérifier si `dons` est bien un tableau
+                    if (!Array.isArray(dons)) {
+                        console.error("Données reçues ne sont pas un tableau:", dons);
+                        dons = [];
+                    }
+
+                    displayDons();
+                } catch (error) {
+                    console.error("Erreur de chargement des dons:", error);
+                }
+            }
+
+            document.getElementById('searchDonInput').addEventListener('input', () => {
+                currentPage = 1;  // Réinitialise la pagination à la première page de don lors de la recherche
+                displayDons();
+            });
+
+            // Afficher les dons avec pagination et filtres
+            function displayDons() {
+                const tableBody = document.getElementById('donsTable');
+                tableBody.innerHTML = '';
+
+                // Application des filtres
+                const searchInput = document.getElementById('searchDonInput').value.toLowerCase();
+
+                let filteredDons = dons.filter(don => {
+                    const nomComplet = don.nom_complet.toLowerCase();
+                    const email = don.email.toLowerCase();
+                    const telephone = don.telephone.toLowerCase();
+                    return nomComplet.includes(searchInput) || email.includes(searchInput) || telephone.includes(searchInput);
+                });
+
+                // Pagination
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const paginatedDons = filteredDons.slice(startIndex, startIndex + itemsPerPage);
+
+                paginatedDons.forEach((don, index) => {
+                    const row = `<tr>
+                        <td>${startIndex + index + 1}</td>
+                        <td>${don.nom_complet}</td>
+                        <td>${don.email}</td>
+                        <!--<td>${don.type_don === 'monetary' ? 'Monétaire' : 'Non Monétaire'}</td>-->
+                        <td>${don.montant}</td>
+                        <td>
+                            ${don.description ? `
+                                <!-- <span class="d-inline-block text-truncate" style="max-width: 150px;">
+                                    ${don.description.slice(0, 20)}...
+                                </span> -->
+                                <button class="btn btn-link p-0" onclick="window.api.showDescriptionModal('${don.description}')">
+                                    Voir plus
+                                </button>
+                            ` : ""}
+                        </td>
+                    </tr>`;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+
+                setupPaginationDons(filteredDons.length);
+            }
+
+            // Afficher la description de don
+            function showDescriptionModal(description) {
+                const modalContent = document.getElementById('descriptionModalContent');
+                modalContent.textContent = description;
+                const descriptionModal = new bootstrap.Modal(document.getElementById('descriptionModal'));
+                descriptionModal.show();
+            }
+
+            function setupPaginationDons(totalItems) {
+                const pagination = document.getElementById('paginationDons');
+                pagination.innerHTML = '';
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+                const maxVisiblePages = 5; // Nombre de boutons visibles autour de la page courante
+
+                // Bouton Précédent
+                if (currentPage > 1) {
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageDons(${currentPage - 1})">Précédent</a>
+                    </li>`);
+                }
+
+                // Calcul des limites d'affichage
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                // Ajustement si on est proche des limites
+                if (endPage - startPage < maxVisiblePages - 1) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+
+                // Bouton pour la première page
+                if (startPage > 1) {
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageDons(1)">1</a>
+                    </li>`);
+                    if (startPage > 2) {
+                        pagination.insertAdjacentHTML('beforeend', `<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                    }
+                }
+
+                // Boutons pour les pages de dons visibles
+                for (let i = startPage; i <= endPage; i++) {
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" onclick="changePageDons(${i})">${i}</a>
+                    </li>`);
+                }
+
+                // Bouton pour la dernière page de don
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        pagination.insertAdjacentHTML('beforeend', `<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                    }
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageDons(${totalPages})">${totalPages}</a>
+                    </li>`);
+                }
+
+                // Bouton Suivant de don
+                if (currentPage < totalPages) {
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageDons(${currentPage + 1})">Suivant</a>
+                    </li>`);
+                }
+            }
+
+            function changePageDons(page) {
+                currentPage = page;
+                displayDons();
+            }
+
+            // Exporter les dons au format CSV
+            function exportTableDonToCSV() {
+                let csv = '\uFEFFNuméro,Nom Complet,Email,Type de Don,Montant\n';
+                dons.forEach((don, index) => {
+                    csv += `${index + 1},"${don.nom_complet}","${don.email}","${don.type_don === 'monetary' ? 'Monétaire' : 'Non Monétaire'}",${don.montant}\n`;
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'dons.csv';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+
+            // Exporter les dons au format PDF
+            function exportTableDonToPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text("Liste des Dons", 10, 10);
+
+                let y = 20;
+                dons.forEach((don, index) => {
+                    const row = `${index + 1}. ${don.nom_complet} - ${don.email} - ${don.type_don === 'monetary' ? 'Monétaire' : 'Non Monétaire'} - ${don.montant}`;
+                    doc.text(row, 10, y);
+                    y += 10;
+                });
+
+                doc.save("dons.pdf");
+            }
+
+            // Gestion de la soumission du formulaire de dons
+            document.getElementById('donForm').addEventListener('submit', async function (event) {
+                event.preventDefault();
+                const donateur_id = document.getElementById('donateurId').value;
+                const type_don = document.getElementById('type').value;
+                const description = document.getElementById('description').value;
+                const montant = parseFloat(document.getElementById('montant').value);
+
+                if (isNaN(montant) || montant < 0) {
+                    alert("Veuillez saisir un montant valide.");
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${apiBaseUrl}/dons`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ donateur_id, type_don, montant,description })
+                    });
+                    const newDon = await response.json();
+                    dons.push(newDon);
+                    loadDons(); // Recharger les dons après ajout
+                    this.reset(); // Réinitialiser le formulaire
+                    document.getElementById('description').required = false;
+                } catch (error) {
+                    console.error("Erreur lors de l'ajout du don:", error);
+                }
+            });
+
+            // Afficher les suggestions de donateurs
+            document.getElementById('donateurInput').addEventListener('input', function () {
+                const query = this.value.toLowerCase();
+                const suggestions = donateurs.filter(d => d.nom.toLowerCase().includes(query) || d.prenom.toLowerCase().includes(query) || d.telephone.toLowerCase().includes(query));
+                const suggestionsList = document.getElementById('donateurSuggestions');
+                suggestionsList.innerHTML = '';
+                
+                suggestions.forEach(donateur => {
+                    const item = document.createElement('div');
+                    item.className = 'list-group-item list-group-item-action';
+                    item.textContent = `${donateur.nom} ${donateur.prenom}`;
+                    item.addEventListener('click', function () {
+                        document.getElementById('donateurInput').value = `${donateur.nom} ${donateur.prenom}`;
+                        document.getElementById('donateurId').value = donateur.id;
+                        suggestionsList.innerHTML = '';
+                    });
+                    suggestionsList.appendChild(item);
+                });
+            });
+
             async function loadDonateurs() {
                 try {
                     const response = await fetch(`${apiBaseUrl}/donateurs`);
-                    const donateurs = await response.json();
-                    const tableBody = document.getElementById('donateursTable');
-                    tableBody.innerHTML = '';
+                    donateurs = await response.json();
 
-                    donateurs.forEach(donateur => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${donateur.nom}</td>
-                            <td>${donateur.prenom}</td>
-                            <td>${donateur.email}</td>
-                            <td>${donateur.telephone}</td>
-                            <td>
-                                <button class="btn btn-warning btn-sm" onclick="window.api.loadDonateurForUpdate(${donateur.id})">Modifier</button>
-                                <button class="btn btn-danger btn-sm" onclick="window.api.deactivateDonateur(${donateur.id})">Désactiver</button>
-                            </td>
-                        `;
-                        tableBody.appendChild(row);
-                    });
+                    // Vérifier si `donateurs` est bien un tableau
+                    if (!Array.isArray(donateurs)) {
+                        console.error("Données reçues ne sont pas un tableau:", donateurs);
+                        donateurs = [];
+                    }
+
+                    displayDonateurs();
                 } catch (error) {
-                    console.error('Erreur lors du chargement des donateurs:', error);
+                    console.error("Erreur de chargement des dons:", error);
                 }
+            }
+
+            document.getElementById('searchDonateurInput').addEventListener('input', () => {
+                currentPage = 1;  // Réinitialise la pagination à la première page lors de la recherche
+                displayDonateurs();
+            });
+
+            function displayDonateurs() {
+                const donateurtableBody = document.getElementById('donateursTable');
+                donateurtableBody.innerHTML = '';
+
+                // Application des filtres
+                const searchDonateurInput = document.getElementById('searchDonateurInput').value.toLowerCase();
+
+                let filteredDonateurs = donateurs.filter(donateur => {
+                    const nomComplet = donateur.nom_complet.toLowerCase();
+                    const email = donateur.email.toLowerCase();
+                    const telephoneDonateur = donateur.telephone.toLowerCase();
+                    return nomComplet.includes(searchDonateurInput) || email.includes(searchDonateurInput) || telephoneDonateur.includes(searchDonateurInput);
+                });
+
+                // Pagination donateurs
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const paginatedDonateurs = filteredDonateurs.slice(startIndex, startIndex + itemsPerPage);
+
+                paginatedDonateurs.forEach((donateur, index) => {
+                    const row = `<tr>
+                        <td>${startIndex + index + 1}</td>
+                        <td>${donateur.nom_complet}</td>
+                        <td>${donateur.email}</td>
+                        <td>${donateur.telephone}</td>
+                        <td class="d-flex">
+                            <button class="btn btn-warning btn-sm" onclick="window.api.loadDonateurForUpdate(${donateur.id})">Modifier</button>&nbsp;&nbsp;
+                            <button class="btn btn-danger btn-sm" onclick="window.api.deactivateDonateur(${donateur.id})">Supprimer</button>
+                        </td>
+                    </tr>`;
+                    donateurtableBody.insertAdjacentHTML('beforeend', row);
+                });
+
+                setupPaginationDonateurs(filteredDonateurs.length);
+            }
+
+            function setupPaginationDonateurs(totalItems) {
+                const paginationDonateur = document.getElementById('paginationDonateurs');
+                paginationDonateur.innerHTML = '';
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+                const maxVisiblePages = 5; // Nombre de boutons visibles autour de la page courante
+
+                // Bouton Précédent
+                if (currentPage > 1) {
+                    paginationDonateur.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageDonateurs(${currentPage - 1})">Précédent</a>
+                    </li>`);
+                }
+
+                // Calcul des limites d'affichage
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                // Ajustement si on est proche des limites
+                if (endPage - startPage < maxVisiblePages - 1) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+
+                // Bouton pour la première page
+                if (startPage > 1) {
+                    paginationDonateur.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageDonateurs(1)">1</a>
+                    </li>`);
+                    if (startPage > 2) {
+                        paginationDonateur.insertAdjacentHTML('beforeend', `<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                    }
+                }
+
+                // Boutons pour les pages de donateurs visibles
+                for (let i = startPage; i <= endPage; i++) {
+                    paginationDonateur.insertAdjacentHTML('beforeend', `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" onclick="changePageDonateurs(${i})">${i}</a>
+                    </li>`);
+                }
+
+                // Bouton pour la dernière page de donateur
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        paginationDonateur.insertAdjacentHTML('beforeend', `<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                    }
+                    paginationDonateur.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageDonateurs(${totalPages})">${totalPages}</a>
+                    </li>`);
+                }
+
+                // Bouton Suivant de donateur
+                if (currentPage < totalPages) {
+                    paginationDonateur.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageDonateurs(${currentPage + 1})">Suivant</a>
+                    </li>`);
+                }
+            }
+
+            function changePageDonateurs(page) {
+                currentPage = page;
+                displayDonateurs();
+            }
+
+            // Exporter les donateurs au format CSV
+            function exportTableDonateurToCSV() {
+                let csv = '\uFEFF#,Nom Complet,Email,Téléphone\n';
+                donateurs.forEach((donateur, index) => {
+                    csv += `${index + 1},"${donateur.nom_complet}","${donateur.email}","${donateur.telephone}"\n`;
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'donateurs.csv';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+
+            // Exporter les dons au format PDF
+            function exportTableDonateurToPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text("Liste des Dons", 10, 10);
+
+                let y = 20;
+                donateurs.forEach((donateur, index) => {
+                    const row = `${index + 1}. ${donateur.nom_complet} - ${donateur.email} - ${donateur.telephone}`;
+                    doc.text(row, 10, y);
+                    y += 10;
+                });
+
+                doc.save("donateurs.pdf");
             }
 
             // Fonctions utilitaires pour ouvrir et fermer le modal
@@ -229,13 +725,26 @@
 
             // Initialisation des événements et chargement initial des donateurs
             document.getElementById('donateurForm').addEventListener('submit', saveDonateur);
+            // exportation
+            window.changePageDons = changePageDons;
+            window.changePageDonateurs = changePageDonateurs;
+
+            window.exportTableDonToCSV = exportTableDonToCSV;
+            window.exportTableDonToPDF = exportTableDonToPDF;
+
+            window.exportTableDonateurToCSV = exportTableDonateurToCSV;
+            window.exportTableDonateurToPDF = exportTableDonateurToPDF;
+
             window.api = {
                 showAddDonateurModal,
                 loadDonateurForUpdate,
                 deactivateDonateur,
-                reactivateDonateur
+                reactivateDonateur,
+                toggleDonFields,
+                showDescriptionModal
             };
             loadDonateurs();
+            loadDons();
         })();
     </script>
 </body>

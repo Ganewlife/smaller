@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import uuid
+from enum import Enum
 
 db = SQLAlchemy()
 
@@ -643,7 +644,7 @@ class Cotisation(Transaction):
         return total or 0
     
     
-class Don(BaseModel):
+""" class Don(Transaction):
     __tablename__ = 'dons'
 
     # id = db.Column(db.Integer, primary_key=True)
@@ -656,9 +657,33 @@ class Don(BaseModel):
         return f'<Don {self.montant}FCFA par Donateur ID {self.donateur_id}>'
     
     def genererRemerciement(self) -> None:
-        """Générer un message de remerciement pour le don."""
-        print(f"Merci au donateur {self.donateur_id} pour un don de {self.montant} euros.")
+        # Générer un message de remerciement pour le don.
+        print(f"Merci au donateur {self.donateur_id} pour un don de {self.montant} euros.") """
 
+class Don(Transaction):
+    __tablename__ = 'dons'
+
+    TYPE_MONETAIRE = 'monétaire'
+    TYPE_MATERIEL = 'matériel'
+    TYPE_SERVICE = 'service'
+
+    type_don = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.String(255), nullable=True)  # Description pour les dons matériels ou de services
+    donateur_id = db.Column(db.Integer, db.ForeignKey('donateurs.id'), nullable=False)
+
+    # Relation avec le modèle Donateur
+    donateur = db.relationship('Donateur', back_populates='dons')
+
+    def __repr__(self):
+        return f'<Don {self.type_don} de {self.donateur.nom} {self.donateur.prenom}>'
+
+    def generer_remerciement(self) -> None:
+        """Générer un message de remerciement pour le don."""
+        if self.type_don == self.TYPE_MONETAIRE:
+            message = f"Merci au donateur {self.donateur.nom} {self.donateur.prenom} pour un don de {self.montant} euros."
+        else:
+            message = f"Merci au donateur {self.donateur.nom} {self.donateur.prenom} pour le don de type '{self.type_don}' : {self.description}."
+        print(message)
 
 class Donateur(BaseModel):
     __tablename__ = 'donateurs'
@@ -669,55 +694,13 @@ class Donateur(BaseModel):
     email = db.Column(db.String(120), unique=True, nullable=False)
     telephone = db.Column(db.String(20))
 
-    dons = db.relationship('Don', backref='donateur', lazy=True)
+    dons = db.relationship('Don', back_populates='donateur')
 
     def __repr__(self):
         return f'<Donateur {self.nom} {self.prenom}>'
 
 
-class Tache(BaseModel):
-    __tablename__ = 'taches'
-
-    nom = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.String(255), nullable=True)
-    date_debut = db.Column(db.Date, nullable=False)
-    date_fin = db.Column(db.Date, nullable=False)
-    statut = db.Column(db.String(50), default="Non commencée")  # Statut initial
-    
-    # Clef etrangère
-    projet_id = db.Column(db.Integer, db.ForeignKey('projets.id'), nullable=False)
-
-    # Relation many-to-many avec Membre via MembreTache
-    membres = db.relationship('Membre', secondary='membre_taches', backref=db.backref('taches_assignes', lazy='dynamic'))
-    
-    def marquer_complete(self):
-        self.statut = "Complétée"
-        db.session.commit()
-
-    """ def reassigner(self, membre_id):
-        self.membre_assigne_id = membre_id
-        db.session.commit() """
-
-    def __repr__(self):
-        return f'<Tache {self.nom} pour le projet ID {self.projet_id}>'
-
-class MembreTache(BaseModel):
-    __tablename__ = 'membre_taches'
-    
-    membre_id = db.Column(db.Integer, db.ForeignKey('membres.id'), primary_key=True)
-    tache_id = db.Column(db.Integer, db.ForeignKey('taches.id'), primary_key=True)
-    role = db.Column(db.String(100), nullable=False) 
-    date_assignation = db.Column(db.DateTime, default=datetime.utcnow)
-
-    # Relations pour les jointures
-    membre = db.relationship('Membre', backref=db.backref('taches_associees', lazy=True))
-    taches = db.relationship('Tache', backref=db.backref('membres_taches', lazy=True))
-
-    def __repr__(self):
-        return f'<MembreTache Membre ID {self.membre_id} associé à Tache ID {self.tache_id}>'
-
-
-class Projet(BaseModel):
+""" class Projet(BaseModel):
     __tablename__ = 'projets'
 
     nom = db.Column(db.String(100), nullable=False)
@@ -727,7 +710,29 @@ class Projet(BaseModel):
     objectifs = db.Column(db.String(255), nullable=True)
     
     # Relation avec les tâches
+    taches = db.relationship('Tache', backref='projet', lazy=True) """
+    
+    
+class Projet(BaseModel):
+    __tablename__ = 'projets'
+
+    nom = db.Column(db.String(100), nullable=False)
+    date_debut = db.Column(db.Date, nullable=False)
+    date_fin = db.Column(db.Date, nullable=False)
+    date_echeance = db.Column(db.Date, nullable=True)
+    objectifs = db.Column(db.String(255), nullable=True)
+    
+    # Budget total du projet
+    budget_alloue = db.Column(db.Float, nullable=False, default=0.0)
+    budget_utilise = db.Column(db.Float, nullable=False, default=0.0)
+
+    # Relation avec les tâches
     taches = db.relationship('Tache', backref='projet', lazy=True)
+
+    def calculer_budget_utilise(self):
+        self.budget_utilise = sum(tache.cout_total() for tache in self.taches)
+        return self.budget_utilise
+
 
     def suivre_avancement(self):
         """Calculer l'avancement basé sur le statut des tâches"""
@@ -741,6 +746,123 @@ class Projet(BaseModel):
     def __repr__(self):
         return f'<Projet {self.nom}>'
 
+""" class Tache(BaseModel):
+    __tablename__ = 'taches'
+
+    nom = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255), nullable=True)
+    date_debut = db.Column(db.Date, nullable=False)
+    date_fin = db.Column(db.Date, nullable=False)
+    statut = db.Column(db.String(50), default="Non commencée")  # Statut initial
+    
+    # Clef etrangère
+    projet_id = db.Column(db.Integer, db.ForeignKey('projets.id'), nullable=False)
+
+    # Relation many-to-many avec Membre via MembreTache
+    membres = db.relationship('Membre', secondary='membre_taches', backref=db.backref('taches_assignes', lazy='dynamic')) """
+
+
+class StatutTache(Enum):
+    A_FAIRE = "A faire"
+    EN_COURS = "En cours"
+    EN_ATTENTE = "En attente"
+    BLOQUEE = "Bloquée"
+    EN_RETARD = "En retard"
+    COMPLETEE = "Complétée"
+
+
+class Tache(BaseModel):
+    __tablename__ = 'taches'
+
+    nom = db.Column(db.String(100), nullable=False)
+    priorite = db.Column(db.String(20), nullable=False, default="Moyenne")
+    description = db.Column(db.String(255), nullable=True)
+    date_debut = db.Column(db.Date, nullable=True)
+    date_fin = db.Column(db.Date, nullable=True)
+    date_echeance = db.Column(db.Date, nullable=True)
+    progression = db.Column(db.Integer, nullable=False, default=0)
+    # status = db.Column(db.String(50), nullable=False, default="en cours")
+    statut = db.Column(db.Enum(StatutTache), nullable=False, default=StatutTache.A_FAIRE)
+    
+    # Liens vers Projet
+    projet_id = db.Column(db.Integer, db.ForeignKey('projets.id'), nullable=False)
+    
+    # Relation avec les coûts
+    couts = db.relationship('Cout', backref='tache', lazy=True)
+    
+    # Relation many-to-many avec Membre via MembreTache
+    membres = db.relationship('Membre', secondary='membre_taches', backref=db.backref('taches_assignes', lazy='dynamic'))
+    
+    def cout_total(self):
+        return sum(cout.montant for cout in self.couts)
+    
+    def changer_statut(self, nouveau_statut):
+        if nouveau_statut in [statut.value for statut in StatutTache]:
+            self.statut = nouveau_statut
+            db.session.commit()
+            
+    def changer_priorite(self, nouveau_priorite):
+        if nouveau_priorite:
+            self.priorite = nouveau_priorite
+            db.session.commit()
+
+    def mettre_a_jour_progression(self, progression):
+        if 0 <= progression <= 100:
+            self.progression = progression
+            db.session.commit()
+
+    def valider_dates(self):
+        if self.date_debut > self.date_fin:
+            raise ValueError("La date de début ne peut pas être après la date de fin.")
+        if self.statut == StatutTache.COMPLETEE and self.progression < 100:
+            raise ValueError("Une tâche complétée doit avoir une progression de 100%.")
+
+    def __repr__(self):
+        return f'<Tache {self.nom} pour le projet ID {self.projet_id}>'
+    
+class Cout(BaseModel):
+    __tablename__ = 'couts'
+
+    montant = db.Column(db.Float, nullable=False)
+    type_cout = db.Column(db.String(50), nullable=False)  # Exemple : 'main-d'œuvre', 'matériel'
+    date = db.Column(db.Date, nullable=False)
+    description = db.Column(db.String(255), nullable=True)
+
+    # Lien vers la tâche
+    tache_id = db.Column(db.Integer, db.ForeignKey('taches.id'), nullable=False)
+
+class MembreTache(db.Model):
+    __tablename__ = 'membre_taches'
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    active = db.Column(db.Boolean, default=True)
+    
+    membre_id = db.Column(db.Integer, db.ForeignKey('membres.id'), primary_key=True)
+    tache_id = db.Column(db.Integer, db.ForeignKey('taches.id'), primary_key=True)
+    # role = db.Column(db.String(100), nullable=False) 
+    # date_assignation = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relations pour les jointures
+    membre = db.relationship('Membre', backref=db.backref('taches_associees', lazy=True))
+    taches = db.relationship('Tache', backref=db.backref('membres_taches', lazy=True))
+
+    def __repr__(self):
+        return f'<MembreTache Membre ID {self.membre_id} associé à Tache ID {self.tache_id}>'
+    
+    # Methode pour creer
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        db.session.add(obj)
+        db.session.commit()
+        return obj
+    
+    def delete(self):
+        self.active = False
+        db.session.commit()
+        
+        
 class Budget(BaseModel):
     __tablename__ = 'budgets'
     
@@ -764,14 +886,29 @@ class Budget(BaseModel):
     def __repr__(self):
         return f'<Budget {self.annee} - Prévu: {self.montant_prevu}, Réel: {self.montant_reel}>'
 
-class RapportFinancier(BaseModel):
+""" class RapportFinancier(BaseModel):
     __tablename__ = 'rapports_financiers'
 
     annee = db.Column(db.Integer, nullable=False)
     contenu = db.Column(db.Text, nullable=True)
     
     # Foreign Key vers Budget
-    budget_id = db.Column(db.Integer, db.ForeignKey('budgets.id'), nullable=False)
+    budget_id = db.Column(db.Integer, db.ForeignKey('budgets.id'), nullable=False) """
+class RapportFinancier(BaseModel):
+    __tablename__ = 'rapports_financiers'
+
+    # date_creation = db.Column(db.Date, default=datetime.date.today, nullable=False)
+    budget_total = db.Column(db.Float, nullable=False)
+    budget_utilise = db.Column(db.Float, nullable=False, default=0.0)
+    solde = db.Column(db.Float, nullable=False, default=0.0)
+    
+    # Relation avec les projets
+    # projets = db.relationship('Projet', backref='rapport_financier', lazy=True)
+    budget_id = db.Column(db.Integer, db.ForeignKey('budgets.id', name='fk_budget_id'), nullable=False)
+
+    
+    
+
 
     def generer_rapport(self) -> str:
         """Génère un rapport basé sur les données du budget."""
