@@ -6,6 +6,10 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 import uuid
 from enum import Enum
+from utils.logger import get_logger
+
+# Initialiser le logger pour routes
+logger = get_logger()
 
 db = SQLAlchemy()
 
@@ -746,29 +750,14 @@ class Projet(BaseModel):
     def __repr__(self):
         return f'<Projet {self.nom}>'
 
-""" class Tache(BaseModel):
-    __tablename__ = 'taches'
-
-    nom = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.String(255), nullable=True)
-    date_debut = db.Column(db.Date, nullable=False)
-    date_fin = db.Column(db.Date, nullable=False)
-    statut = db.Column(db.String(50), default="Non commencée")  # Statut initial
-    
-    # Clef etrangère
-    projet_id = db.Column(db.Integer, db.ForeignKey('projets.id'), nullable=False)
-
-    # Relation many-to-many avec Membre via MembreTache
-    membres = db.relationship('Membre', secondary='membre_taches', backref=db.backref('taches_assignes', lazy='dynamic')) """
-
 
 class StatutTache(Enum):
     A_FAIRE = "A faire"
     EN_COURS = "En cours"
     EN_ATTENTE = "En attente"
-    BLOQUEE = "Bloquée"
+    BLOQUÉE = "Bloquée"
     EN_RETARD = "En retard"
-    COMPLETEE = "Complétée"
+    COMPLÉTÉE = "Complétée"
 
 
 class Tache(BaseModel):
@@ -796,10 +785,26 @@ class Tache(BaseModel):
     def cout_total(self):
         return sum(cout.montant for cout in self.couts)
     
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'nom': self.nom,
+            'description': self.description,
+            'priorite': self.priorite,
+            'progression': self.progression,
+            'date_debut': self.date_debut.isoformat() if self.date_debut else None,
+            'date_fin': self.date_fin.isoformat() if self.date_fin else None,
+        }
+        
     def changer_statut(self, nouveau_statut):
-        if nouveau_statut in [statut.value for statut in StatutTache]:
-            self.statut = nouveau_statut
+        # print(f"statut model: {nouveau_statut}")
+        if nouveau_statut in [statut.name for statut in StatutTache]:
+            # self.statut = nouveau_statut
+            self.statut = StatutTache[nouveau_statut]
+            if nouveau_statut == "COMPLÉTÉE":
+                self.date_echeance = datetime.utcnow()
             db.session.commit()
+            logger.info("Mise à jour des tâches terminée avec succès.")
             
     def changer_priorite(self, nouveau_priorite):
         if nouveau_priorite:
@@ -823,13 +828,23 @@ class Tache(BaseModel):
 class Cout(BaseModel):
     __tablename__ = 'couts'
 
-    montant = db.Column(db.Float, nullable=False)
+    montant = db.Column(db.Integer, nullable=False)
     type_cout = db.Column(db.String(50), nullable=False)  # Exemple : 'main-d'œuvre', 'matériel'
     date = db.Column(db.Date, nullable=False)
     description = db.Column(db.String(255), nullable=True)
 
     # Lien vers la tâche
     tache_id = db.Column(db.Integer, db.ForeignKey('taches.id'), nullable=False)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'montant': self.montant,
+            'type_cout': self.type_cout,
+            'description': self.description,
+            'date': self.date.isoformat() if self.date else None,  # Convertir la date en format iso si elle existe
+            'tache_id': self.tache_id
+        }
 
 class MembreTache(db.Model):
     __tablename__ = 'membre_taches'
@@ -840,8 +855,6 @@ class MembreTache(db.Model):
     
     membre_id = db.Column(db.Integer, db.ForeignKey('membres.id'), primary_key=True)
     tache_id = db.Column(db.Integer, db.ForeignKey('taches.id'), primary_key=True)
-    # role = db.Column(db.String(100), nullable=False) 
-    # date_assignation = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relations pour les jointures
     membre = db.relationship('Membre', backref=db.backref('taches_associees', lazy=True))

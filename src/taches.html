@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+div<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -41,7 +41,7 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="dashboard.html">Tableau de bord</a>
-                        </li>
+                        </li><a href=""></a>
                     </ul>
                 </div>
             </div>
@@ -57,7 +57,7 @@
                             <span>À faire</span>
                             <button class="btn btn-sm btn-primary" onclick="addTask('a-faire')">+</button>
                         </div>
-                        <div class="card-body" id="a-faire" style="padding: 8px; min-height: 150px;">
+                        <div class="card-body task-column" id="a-faire" style="padding: 8px; min-height: 150px;">
                             <!-- Tâches ajoutées dynamiquement ici -->
                         </div>
                     </div>
@@ -68,7 +68,7 @@
                             <span>En cours</span>
                             <button class="btn btn-sm btn-primary" onclick="addTask('en-cours')">+</button>
                         </div>
-                        <div class="card-body" id="en-cours" style="padding: 8px; min-height: 150px;">
+                        <div class="card-body task-column" id="en-cours" style="padding: 8px; min-height: 150px;">
                             <!-- Tâches ajoutées dynamiquement ici -->
                         </div>
                     </div>
@@ -79,7 +79,7 @@
                             <span>En attente</span>
                             <button class="btn btn-sm btn-primary" onclick="addTask('en-attente')">+</button>
                         </div>
-                        <div class="card-body" id="en-attente" style="padding: 8px; min-height: 150px;">
+                        <div class="card-body task-column" id="en-attente" style="padding: 8px; min-height: 150px;">
                             <!-- Tâches ajoutées dynamiquement ici -->
                         </div>
                     </div>
@@ -90,7 +90,7 @@
                             <span>Bloquée</span>
                             <button class="btn btn-sm btn-primary" onclick="addTask('bloquée')">+</button>
                         </div>
-                        <div class="card-body" id="bloquée" style="padding: 8px; min-height: 150px;">
+                        <div class="card-body task-column" id="bloquée" style="padding: 8px; min-height: 150px;">
                             <!-- Tâches ajoutées dynamiquement ici -->
                         </div>
                     </div>
@@ -101,7 +101,7 @@
                             <span>En retard</span>
                             <button class="btn btn-sm btn-primary" onclick="addTask('en-retard')">+</button>
                         </div>
-                        <div class="card-body" id="en-retard" style="padding: 8px; min-height: 150px;">
+                        <div class="card-body task-column" id="en-retard" style="padding: 8px; min-height: 150px;">
                             <!-- Tâches ajoutées dynamiquement ici -->
                         </div>
                     </div>
@@ -112,14 +112,105 @@
                             <span>Complétée</span>
                             <button class="btn btn-sm btn-primary" onclick="addTask('complétée')">+</button>
                         </div>
-                        <div class="card-body" id="complétée" style="padding: 8px; min-height: 150px;">
+                        <div class="card-body task-column" id="complétée" style="padding: 8px; min-height: 150px;">
                             <!-- Tâches ajoutées dynamiquement ici -->
                         </div>
                     </div>
                 </div>
             </div>
+        
         </div>
+
+        <div class="row task-details-container d-none" id="task-details">
+            <!-- Colonne gauche : Détails de la tâche -->
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 id="task-details-title">
+                    <span id="nom" class="editable" onclick="makeEditable(this, 'text')">Nom de la tâche</span>
+                </h5>
+                <button class="btn btn-sm btn-secondary" onclick="closeTaskDetails()">Fermer</button>
+            </div>
+            <div class="col-md-5">
+                <div class="card">
+                    <div class="card-body">
+                        <p><strong>Coût total :</strong> <span id="cout-total"></span> FCFA</p>
+                        <p><strong>Priorité :</strong> <span id="task-priority"></span></p>
+                        <p><strong>Progression :</strong> <span id="task-progress"></span>%</p>
+                        <p class="mb-0"><strong>Membre(s) assigné(s) : </strong></p>
+                            <select id="task-members-dropdown" class=" mb-3 form-select form-select-sm">
+                                <!-- Options générées dynamiquement -->
+                            </select>
+                        
+                        <p><strong>Date de début :</strong> <span id="task-start-date"></span></p>
+                        <p><strong>Date de fin :</strong> <span id="task-end-date"></span></p>
+                        <p class="mb-0" ><strong>Description :</strong></p>
+                        <textarea rows="5" id="description" class="editable form-control" onclick="makeEditable(this, 'textarea')">Description de la tâche</textarea>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Colonne droite : Formulaire et tableau des coûts -->
+            <div class="col-md-7">
+                <!-- Formulaire d'ajout de coût -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Ajouter un coût</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="addCostForm">
+                            <input type="hidden" id="cost-id" value="">
+                            <div class="row"> 
+                                <div class="col-md-3 mb-2>
+                                    <label for="montant" class="form-label">Montant</label>
+                                    <input type="number" step="0.01" class="form-control" id="montant" required>
+                                </div>
+                                <div class="col-md-3 mb-2">
+                                    <label for="date" class="form-label mb-0">Date</label>
+                                    <input type="date" class="form-control" id="date" required>
+                                </div>
+                                <div class=" col-md-6 mb-2">
+                                    <label for="type_cout" class="form-label">Type de coût</label>
+                                    <input type="text" class="form-control" id="type_cout" placeholder="ex: matériel" required>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description-cout" rows="3"></textarea>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                                <button type="button" id="cancel-button" class="btn btn-secondary d-none">Annuler</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+    
+                <!-- Tableau des coûts -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Coûts enregistrés</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Montant FCFA</th>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="task-costs-table">
+                                <!-- Les lignes du tableau seront générées dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
+    
     
 
     <style>
@@ -144,6 +235,12 @@
     .card-body {
             overflow-y: auto;
             max-height: calc(100vh - 150px); /* Ajuste la hauteur */
+    }
+
+    .drag-over {
+    border: 2px dashed #007bff;
+    background-color: #f0f8ff;
+    transition: background-color 0.3s ease;
     }
     </style>
     <!-- .card-body {
@@ -230,7 +327,6 @@
                 closeAllSearchFields();
                 const column = document.getElementById(status);
                 if (!column) return;
-
 
                 // Créer un champ d'entrée pour saisir le nom de la tâche
                 const inputCard = document.createElement("div");
@@ -319,8 +415,6 @@
                 dateInput._flatpickr.open();
             }
 
-
-
             async function updateTaskDates(taskId, dateDebut, dateFin) {
                 try {
                     const response = await fetch(`${apiBaseUrl}/taches/${taskId}/update-date`, {
@@ -350,6 +444,7 @@
                 card.className = "card mb-1";
                 card.draggable = true;
                 card.dataset.id = task.id;
+                card.setAttribute("role", "listitem");
 
                 // Gestion du drag & drop
                 card.addEventListener("dragstart", (event) => {
@@ -498,8 +593,232 @@
                         />
                     </div>
                 `;
+                card.querySelector(".task-title").addEventListener("click", () => showTaskDetails(task.id));
 
                 return card;
+            }
+
+            function showTaskDetails(taskId) {
+                // Trouver les détails de la tâche par son ID
+                const task = tasks.find((t) => t.id === taskId);
+                if (!task) {
+                    alert("Erreur : Tâche non trouvée.");
+                    return;
+                }
+
+                // Mise à jour des détails de la tâche
+                updateTaskDetails(task);
+
+                // Dynamiser les options du dropdown pour les membres
+                updateTaskMembersDropdown(task.membres);
+
+                // Appel des coûts de la tâche
+                loadTaskCosts(taskId);
+
+                // Ajouter l'attribut data-task-id
+                const detailsContainer = document.getElementById("task-details");
+                detailsContainer.setAttribute("data-task-id", task.id);
+
+                // Afficher la section des détails
+                detailsContainer.classList.remove("d-none");
+                detailsContainer.scrollIntoView({ behavior: "smooth" });
+            }
+
+            /**
+             * Met à jour les détails de la tâche dans l'interface
+             * @param {Object} task - Détails de la tâche
+             */
+            function updateTaskDetails(task) {
+                document.getElementById("nom").textContent = task.nom || "Non spécifié";
+                document.getElementById("cout-total").textContent = task.cout_total || "0 ";
+                document.getElementById("description").textContent = task.description || "Aucune description";
+                document.getElementById("task-priority").textContent = task.priorite || "Non définie";
+                document.getElementById("task-progress").textContent = task.progression || "0";
+                document.getElementById("task-start-date").textContent = formatDate(task.date_debut) || "Non définie";
+                document.getElementById("task-end-date").textContent = formatDate(task.date_fin) || "Non définie";
+            }
+
+            /**
+             * Met à jour les options du dropdown des membres assignés
+             * @param {Array} membres - Liste des membres assignés à la tâche
+             */
+            function updateTaskMembersDropdown(membres) {
+                const membersDropdown = document.getElementById("task-members-dropdown");
+                membersDropdown.innerHTML = ""; // Vider les options existantes
+
+                if (membres && membres.length > 0) {
+                    membres.forEach((membre) => {
+                        const option = document.createElement("option");
+                        option.value = membre.id; // ID unique du membre
+                        option.textContent = membre.fullname; // Nom complet du membre
+                        membersDropdown.appendChild(option);
+                    });
+                } else {
+                    const defaultOption = document.createElement("option");
+                    defaultOption.textContent = "Aucun membre assigné";
+                    defaultOption.disabled = true;
+                    membersDropdown.appendChild(defaultOption);
+                }
+            }
+
+            
+            function closeTaskDetails() {
+                const detailsContainer = document.getElementById("task-details");
+                detailsContainer.classList.add("d-none");
+            }
+
+            // editeur des champs de details de tache
+            function makeEditable(element, type) {
+                const initialValue = element.textContent;
+                const input = type === "textarea" ? document.createElement("textarea") : document.createElement("input");
+                if (type === "textarea") {
+                    element.setAttribute("rows", "4");
+                }
+                
+                input.value = initialValue;
+                input.className = "form-control";
+                input.onblur = async () => {
+                    const newValue = input.value.trim();
+                    if (newValue !== initialValue) {
+                        try {
+                            await updateTaskField(element.id, newValue);
+                            element.textContent = newValue;
+                        } catch (error) {
+                            console.error("Erreur lors de la mise à jour :", error);
+                            element.textContent = initialValue; // Rétablir la valeur initiale en cas d'échec
+                        }
+                    }
+                    element.classList.remove("d-none");
+                    input.remove();
+                };
+
+                element.textContent = "";
+                element.classList.add("d-none");
+                element.parentElement.appendChild(input);
+                input.focus();
+            }
+
+            async function updateTaskField(fieldId, value) {
+                // Simuler une API (remplacer par votre API réelle)
+                const taskId = document.getElementById("task-details").getAttribute("data-task-id");
+                console.log("ID de la tâche sélectionnée :", taskId);
+                console.log('field: ',fieldId);
+                console.log('valeur: ',value);
+                // const taskId = fieldId.includes("name") ? "task-name" : "task-description";
+                const response = await fetch(`${apiBaseUrl}/taches/${taskId}/update`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ [fieldId]: value }),
+                });
+
+                if (!response.ok) {
+                    throw new Error("Mise à jour échouée");
+                }
+                return response.json();
+            }
+
+
+            document.getElementById("addCostForm").onsubmit = async function (event) {
+                event.preventDefault();
+
+                const taskId = document.getElementById("task-details").getAttribute("data-task-id");
+                const costId = document.getElementById("cost-id").value;
+                console.log("cout id",costId);
+                const method = costId ? 'PUT' : 'POST';
+                console.log("method",method);
+                const apiUrl = costId ? `${apiBaseUrl}/couts/${costId}` : `${apiBaseUrl}/taches/${taskId}/couts`;
+                console.log("url",apiUrl);
+
+                const payload = {
+                    montant: parseFloat(document.getElementById("montant").value),
+                    type_cout: document.getElementById("type_cout").value,
+                    date: document.getElementById("date").value,
+                    description: document.getElementById("description-cout").value || null,
+                };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: method,
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload),
+                    });
+
+                    if (response.ok) {
+                        alert("Coût ajouté avec succès !");
+                        document.getElementById('cost-id').value = '';
+                        resetForm();
+                        // showTaskDetails(taskId)
+                        loadTaskCosts(taskId); // Recharge les coûts
+                    } else {
+                        const error = await response.json();
+                        alert(`Erreur : ${error.error}`);
+                    }
+                } catch (error) {
+                    console.error("Erreur lors de l'ajout du coût :", error);
+                    alert("Une erreur est survenue.");
+                }
+            };
+
+            async function editCost(costId) {
+                try {
+                    const response = await fetch(`${apiBaseUrl}/couts/${costId}`);
+                    if (response.ok) {
+                        const cost = await response.json();
+
+                        // Précharger les données dans le formulaire
+                        document.getElementById("montant").value = cost.montant;
+                        document.getElementById("type_cout").value = cost.type_cout;
+                        document.getElementById("description-cout").value = cost.description || "";
+                        document.getElementById("date").value = cost.date;
+
+                        // Stocker l'ID du coût dans un champ caché pour les mises à jour
+                        document.getElementById("cost-id").value = cost.id;
+
+                        // Afficher le bouton Annuler
+                        document.getElementById("cancel-button").classList.remove("d-none");
+
+                        // Afficher le formulaire ou le modal
+                        // document.getElementById("cost-form-modal").classList.add("show");
+                    } else {
+                        console.error("Erreur lors de la récupération des informations du coût.");
+                    }
+                } catch (error) {
+                    console.error("Une erreur est survenue :", error);
+                }
+            }
+
+            function resetForm() {
+                document.getElementById("addCostForm").reset();
+                document.getElementById("cost-id").value = "";
+                document.getElementById("cancel-button").classList.add("d-none");
+            }
+
+            async function loadTaskCosts(taskId) {
+                const response = await fetch(`${apiBaseUrl}/taches/${taskId}/couts`);
+                if (response.ok) {
+                    const costs = await response.json();
+                    const tableBody = document.getElementById("task-costs-table");
+                    tableBody.innerHTML = ""; // Vider le tableau avant d'ajouter les nouvelles données
+
+                    costs.forEach((cost) => {
+                        const row = document.createElement("tr");
+
+                        row.innerHTML = `
+                            <td>${cost.type_cout}</td>
+                            <td>${cost.montant}</td>
+                            <td>${cost.date}</td>
+                            <td>${cost.description || "-"}</td>
+                            <td> <a href="#descrption-cout">
+                                <button class="btn btn-sm btn-warning" onclick="editCost(${cost.id})"> Editer</button>
+                                </a>
+                            </td>
+                        `;
+
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    console.error("Erreur lors du chargement des coûts.");
+                }
             }
 
             // Affiche ou masque le dropdown des priorités pour une tâche
@@ -541,8 +860,6 @@
 
             // Met à jour la priorité de la tâche via une requête API
             async function updateTaskPriority(taskId, priority) {
-                console.log("task id: ",taskId);
-                console.log("priorite: ",priority);
                 try {
                     // Envoie la requête PUT au serveur
                     const response = await fetch(`${apiBaseUrl}/taches/${taskId}`, {
@@ -565,15 +882,6 @@
                     console.error("Erreur :", error.message);
                 }
             };
-
-            /* // Fonction pour afficher le champ de saisie de progression
-            function showProgressInput(event, taskId) {
-                event.stopPropagation();
-                const input = document.getElementById(`progress-input-${taskId}`);
-                hideAllInteractiveFields(); // Masquer tous les champs actifs
-                input.classList.remove("d-none");
-                input.querySelector("input").focus(); // Focus sur le champ
-            } */
 
             // Fonction pour masquer tous les champs interactifs
             function hideAllInteractiveFields() {
@@ -712,7 +1020,7 @@
             // Charger les tâches dans les colonnes
             async function loadTasks() {
                 await getTasks();
-                const columns = ["a-faire", "en-cours", "en-attente", "bloquée", "complétée"]; // Ajouter "en-attente"
+                const columns = ["a-faire", "en-cours", "en-attente", "bloquée", "en-retard", "complétée"]; // Ajouter "en-attente"
                 columns.forEach((col) => {
                     const column = document.getElementById(col);
                     if (column) column.innerHTML = ""; // Réinitialiser les colonnes
@@ -729,36 +1037,39 @@
 
             // Détermine la couleur du badge selon la priorité
             function getPriorityColor(priority) {
-            switch (priority) {
-                case "Élevée":
-                return "danger";
-                case "Moyenne":
-                return "warning";
-                case "Basse":
-                return "success";
-                default:
-                return "secondary";
-            }
+                switch (priority) {
+                    case "Élevée":
+                    return "danger";
+                    case "Moyenne":
+                    return "warning";
+                    case "Basse":
+                    return "success";
+                    default:
+                    return "secondary";
+                }
             }
 
             async function updateTaskStatus(taskId, newStatus) {
+                // console.log('staut actuel: ',newStatus);
                 try {
                     const projet_id = await window.api.getProjetId();
-                    const response = await fetch(`${apiBaseUrl}/projets/${projet_id}/taches/${taskId}`, {
+                    const response = await fetch(`${apiBaseUrl}/taches/${taskId}`, {
                         method: "PUT",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ statut: newStatus.toUpperCase().replace("-", "_") }),
                     });
                     if (response.ok) {
-                        console.log("Statut mis à jour avec succès.");
-                    } else {
-                        console.error("Erreur lors de la mise à jour du statut:", await response.json());
+                        console.log(`Tâche ${taskId} déplacée dans ${newStatus}`);
+                        loadTasks();
+                    }else{
+                        const error = await response.json();
+                        console.error("Erreur lors de la mise à jour du statut:", error.message || error);
+                        return;
                     }
                 } catch (error) {
                     console.error("Erreur lors de la mise à jour du statut:", error);
                 }
             }
-
 
             document.querySelectorAll(".task-column").forEach((column) => {
                 // Permettre le dépôt
@@ -777,65 +1088,35 @@
                     event.preventDefault();
                     column.classList.remove("border", "border-primary", "bg-light");
 
-                    const taskId = event.dataTransfer.getData("text/plain"); // Récupère l'ID de la tâche
-                    const newStatus = column.dataset.status; // Nouvel statut basé sur l'attribut `data-status`
+                    const taskId = event.dataTransfer.getData("text/plain");
+                    const newStatus = column.id; // ID de la colonne cible
 
-                    // Mettre à jour la tâche côté serveur
                     try {
-                        const response = await fetch(`${apiBaseUrl}/taches/${taskId}`, {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ statut: newStatus }),
-                        });
+                        await updateTaskStatus(taskId, newStatus);
 
-                        if (response.ok) {
-                            loadTasks(); // Recharge les tâches après le déplacement
-                        } else {
-                            console.error("Erreur lors de la mise à jour de la tâche :", await response.json());
-                        }
+                        // Déplacer l'élément visuellement
+                        const taskElement = document.querySelector(`[data-id="${taskId}"]`);
+                        if (taskElement) column.appendChild(taskElement);
                     } catch (error) {
-                        console.error("Erreur lors de la mise à jour de la tâche :", error);
+                        console.error("Erreur lors de la mise à jour du statut:", error);
                     }
                 });
             });
-
-
-            /* document.querySelectorAll(".bg-light").forEach((column) => {
-            column.addEventListener("dragover", (event) => {
-                event.preventDefault();
-            });
-
-            column.addEventListener("drop", (event) => {
-                const taskId = event.dataTransfer.getData("text/plain");
-                const taskElement = document.querySelector(`[data-id="${taskId}"]`);
-                if (taskElement) {
-                column.appendChild(taskElement);
-
-                // Mettre à jour le statut de la tâche
-                const task = tasks.find((t) => t.id === parseInt(taskId));
-                if (task) {
-                    task.statut = column.id.replace("-", " ").replace("completee", "Complétée");
-                    console.log(`Tâche mise à jour : ${task.nom} -> ${task.statut}`);
-                }
-                }
-            });
-            });
-
-            document.addEventListener("dragstart", (event) => {
-            if (event.target.classList.contains("card")) {
-                event.dataTransfer.setData("text/plain", event.target.dataset.id);
-            }
-            }); */
-
+            
+            // Gérer le clic sur le bouton "Annuler"
+            document.getElementById("cancel-button").addEventListener("click", resetForm);
 
             window.addTask = addTask;
             window.filterMembers = filterMembers;
             window.saveTask = saveTask;
             window.showAssignMemberInput = showAssignMemberInput;
             window.showDateRangePicker = showDateRangePicker;
-            window.updateTaskPriority   = updateTaskPriority  ;
+            window.updateTaskPriority = updateTaskPriority ;
             window.showProgressInput = showProgressInput;
             window.updateTaskProgress = updateTaskProgress;
+            window.closeTaskDetails = closeTaskDetails;
+            window.makeEditable = makeEditable;
+            window.editCost = editCost;
 
             // Initialisation de l'application
             initializeGlobalEventId();

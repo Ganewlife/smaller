@@ -7,7 +7,5 @@ class Config:
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'assopilot.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-
-
-
-
+    # Configuration pour Flask-APScheduler
+    SCHEDULER_API_ENABLED = True  # Permettre l'accès API au scheduler (optionnel)

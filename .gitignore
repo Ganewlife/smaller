@@ -14,6 +14,8 @@ backend/__pycache__/
 # Fichiers de base de données SQLite
 backend/database.db
 backend/assopilot.db
+backend/logs/*.log
+backend/logs/*.json
 
 # Dépendances Node.js
 node_modules/

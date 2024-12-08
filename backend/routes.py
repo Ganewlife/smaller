@@ -1,5 +1,5 @@
 from flask import Flask, Blueprint, current_app, request, jsonify, make_response
-from models import Membre, CategorieMembre, Statut, Admin, Donateur, Don, Cotisation, Evenement, Inscription, Participation, Projet, StatutTache, Tache, MembreTache, Budget, RapportFinancier, Document, ProcesVerbal
+from models import Membre, CategorieMembre, Statut, Admin, Donateur, Don, Cotisation, Evenement, Inscription, Participation, Projet, Cout, StatutTache, Tache, MembreTache, Budget, RapportFinancier, Document, ProcesVerbal
 # from datetime import datetime
 import os
 import jwt
@@ -9,6 +9,11 @@ from flask import send_from_directory, abort
 from werkzeug.utils import secure_filename
 # from sqlalchemy import func
 from sqlalchemy.orm import joinedload
+# from app import logger
+from utils.logger import get_logger
+
+# Initialiser le logger pour routes
+logger = get_logger()
 
 # Chemin de base où les documents sont sauvegardés
 UPLOAD_DIRECTORY = os.path.join(os.getcwd(), 'uploads')
@@ -1251,22 +1256,22 @@ def create_tache():
     )
     return jsonify({"message": "Tâche créée", "tache_id": tache.id}), 201
 
-# MAJ Tache
-@main.route('/taches/<int:tache_id>', methods=['PUT'])
-def update_tache(tache_id):
-    tache = Tache.get_by_id(tache_id)
-    if not tache:
-        return jsonify({"message": "Tâche non trouvée"}), 404
+# # MAJ Tache
+# @main.route('/taches/<int:tache_id>', methods=['PUT'])
+# def update_tache(tache_id):
+#     tache = Tache.get_by_id(tache_id)
+#     if not tache:
+#         return jsonify({"message": "Tâche non trouvée"}), 404
     
-    data = request.json
-    tache.update(
-        nom=data['nom'],
-        description=data.get('description'),
-        date_debut=datetime.strptime(data['date_debut'], '%Y-%m-%d').date(),
-        date_fin=datetime.strptime(data['date_fin'], '%Y-%m-%d').date(),
-        statut=data.get('statut', tache.statut),  # Si le statut est passé, sinon conserver l'actuel
-    )
-    return jsonify({"message": "Tâche mise à jour"})
+#     data = request.json
+#     tache.update(
+#         nom=data['nom'],
+#         description=data.get('description'),
+#         date_debut=datetime.strptime(data['date_debut'], '%Y-%m-%d').date(),
+#         date_fin=datetime.strptime(data['date_fin'], '%Y-%m-%d').date(),
+#         statut=data.get('statut', tache.statut),  # Si le statut est passé, sinon conserver l'actuel
+#     )
+#     return jsonify({"message": "Tâche mise à jour"})
 
 # Assigner une tache à un memebre
 @main.route('/taches/<int:tache_id>/assigner_membre', methods=['POST'])
@@ -1386,6 +1391,7 @@ def get_projets():
     return jsonify([{
         "id": p.id,
         "nom": p.nom,
+        "budget_utilise": p.calculer_budget_utilise(),
         "objectifs": p.objectifs,
         "date_debut": p.date_debut.strftime('%Y-%m-%d'),
         "date_fin": p.date_fin.strftime('%Y-%m-%d'),
@@ -1473,7 +1479,7 @@ def create_tache(projet_id):
         date_fin=convertir_date(data.get('date_fin')),
         date_echeance=convertir_date(data.get('date_echeance')),
         progression=data.get('progression', 0),
-        statut=StatutTache[data.get('statut', StatutTache.A_FAIRE)],  # Par défaut 'EN_ATTENTE'
+        statut=StatutTache[data.get('statut', StatutTache.A_FAIRE)],  # Par défaut 'A_FAIRE'
         projet_id=projet_id
     )
 
@@ -1507,7 +1513,7 @@ def update_progression_tache(tache_id):
             return jsonify({"error": "Aucune donnée envoyée"}), 400
         
         # Mise à jour des informations
-        if 'statut' in data:
+        if 'statut' in data and (data['statut'] != 'EN_RETARD'):
             tache.changer_statut(data['statut'])
         if 'progression' in data:
             progression = int(data['progression'])
@@ -1521,11 +1527,40 @@ def update_progression_tache(tache_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+@main.route('/taches/<int:tache_id>/update', methods=['PUT'])
+def update_tache(tache_id):
+    # Récupérer les données de la requête
+    data = request.get_json()
+    if not data:
+        
+        return jsonify({'error': 'Aucune donnée fournie'}), 400
 
+    # Trouver la tâche par son ID
+    task = Tache.query.get(tache_id)
+    if not task:
+        return jsonify({'error': 'Tâche non trouvée'}), 404
+
+    # Filtrer les champs autorisés
+    valid_fields = ['nom', 'description', 'priorite', 'progression', 'date_debut', 'date_fin']
+    update_data = {key: value for key, value in data.items() if key in valid_fields}
+
+    if not update_data:
+        print('foncton exec no data')
+        return jsonify({'error': 'Aucun champ valide fourni'}), 400
+
+    # Mettre à jour la tâche en utilisant la méthode `update`
+    try:
+        task.update(**update_data)
+        return jsonify({'message': 'Tâche mise à jour avec succès', 'updated_task': task.to_dict()}), 200
+    except Exception as e:
+        print("Erreur lors de la mise à jour :", str(e))  # Affichez l'erreur dans les logs
+        return jsonify({'error': f'Erreur lors de la mise à jour : {str(e)}'}), 500
+    
 # Récupérer toutes les tâches
 @main.route('/taches', methods=['GET'])
 # Route pour obtenir toutes les tâches
 def get_tasks():
+    logger.info(f"Récupération des tâches")
     tasks = Tache.get_all()
     tasks_data = [{
         'id': task.id,
@@ -1561,6 +1596,7 @@ def get_taches_projet(projet_id):
                 'date_fin': tache.date_fin.strftime('%Y-%m-%d') if tache.date_fin else '',
                 'statut': tache.statut.value,
                 'updated_at': tache.updated_at.strftime('%Y-%m-%d'),
+                'cout_total': tache.cout_total(),
                 'projet': {
                         'id': tache.projet.id,
                         'nom': tache.projet.nom
@@ -1601,31 +1637,12 @@ def get_assigned_members(tache_id):
         return jsonify({"message": "Erreur interne du serveur"}), 500
     
     
-# Récupérer une tâche par ID
+""" # Récupérer une tâche par ID
 @main.route('/taches/<int:tache_id>', methods=['GET'])
 def get_tache(tache_id):
     tache = Tache.get_by_id(tache_id)
-    return jsonify(tache.to_dict()), 200
+    return jsonify(tache.to_dict()), 200 """
 
-# Mettre à jour une tâche
-@main.route('/taches/<int:tache_id>', methods=['PUT'])
-def update_tache(tache_id):
-    data = request.json
-    tache = Tache.get_by_id(tache_id)
-    Tache.update(
-        nom=data['nom'],
-        description=data.get('description'),
-        date_debut=data['date_debut'],
-        date_fin=data['date_fin'],
-        status=data.get('status', 'en cours')
-    )
-    tache.nom = data['nom']
-    tache.description = data.get('description')
-    tache.date_debut = data['date_debut']
-    tache.date_fin = data['date_fin']
-    tache.status = data.get('status', 'en cours')
-    
-    return jsonify({"message": "Tâche mise à jour avec succès"}), 200
 
 # Supprimer une tâche
 @main.route('/taches/<int:tache_id>', methods=['DELETE'])
@@ -1634,8 +1651,6 @@ def delete_tache(tache_id):
     tache.delete(tache)
     
     return jsonify({"message": "Tâche supprimée avec succès"}), 204
-
-
 
 
 # Route pour Associer/Dissocier une Tâche à un Membre
@@ -1667,6 +1682,100 @@ def remove_member_from_task(tache_id, membre_id):
         return jsonify({"error": "Association introuvable"}), 404
     membre_tache.delete(membre_tache)
     return jsonify({"message": "Membre dissocié de la tâche avec succès"}), 204
+
+
+@main.route('/taches/<int:tache_id>/couts', methods=['POST'])
+def add_cout(tache_id):
+    # Vérifier si la tâche existe
+    tache = Tache.query.get(tache_id)
+    if not tache:
+        return jsonify({'error': 'Tâche non trouvée'}), 404
+
+    # Extraire les données du coût depuis la requête
+    data = request.get_json()
+
+    montant = data.get('montant')
+    type_cout = data.get('type_cout')
+    description = data.get('description')
+    date = convertir_date(data.get('date'))
+
+    # Valider les données reçues
+    if not montant or not type_cout or not date:
+        return jsonify({'error': 'Données invalides'}), 400
+    
+    # Vérifier que 'montant' est un nombre valide
+    try:
+        montant = int(montant)  # Assurez-vous que montant est un entier valide
+        if montant <= 0:
+            return jsonify({'error': 'Le montant doit être un nombre positif'}), 400
+    except ValueError:
+        return jsonify({'error': 'Le montant doit être un nombre valide'}), 400
+
+    try:
+        # Créer un nouveau coût
+        cout = Cout.create(
+            montant=montant,  # Utilisez le montant validé
+            type_cout=type_cout,
+            description=description,
+            date=date,
+            tache_id=tache_id
+        )
+
+        # Enregistrer dans la base de données
+        # cout.create()  # Assurez-vous que la méthode create() fonctionne correctement
+    except Exception as e:
+        return jsonify({'error': f'Erreur lors de la création du coût: {str(e)}'}), 500
+
+    return jsonify({'message': 'Coût ajouté avec succès', 'cout': cout.to_dict()}), 201
+
+
+@main.route('/couts/<int:cout_id>', methods=['PUT'])
+def update_cost(cout_id):
+    # Récupérer le coût par son ID
+    cout = Cout.get_by_id(cout_id)
+    if not cout:
+        return jsonify({'error': 'Coût non trouvé'}), 404
+
+    # Extraire les nouvelles données
+    data = request.get_json()
+
+    # Enregistrer les modifications
+    try:
+        cout.update(
+            montant=data.get('montant', cout.montant),  # Utilisez le montant validé
+            type_cout=data.get('type_cout', cout.type_cout),
+            description=data.get('description', cout.description),
+            date=convertir_date(data.get('date')) or cout.date
+        )
+        return jsonify({'message': 'Coût mis à jour avec succès', 'cout': cout.to_dict()}), 200
+    except Exception as e:
+        return jsonify({'error': f'Erreur lors de la mise à jour du coût: {str(e)}'}), 500
+
+
+@main.route('/taches/<int:tache_id>/couts', methods=['GET'])
+def get_task_costs(tache_id):
+    # Récupérer la tâche en question avec ses coûts
+    tache = Tache.query.get(tache_id)
+    if not tache:
+        return jsonify({'error': 'Tâche non trouvée'}), 404
+
+    # Accéder aux coûts associés à la tâche via la relation 'couts'
+    couts = tache.couts
+
+    # Convertir les coûts en une liste de dictionnaires
+    couts_data = [cout.to_dict() for cout in couts]
+
+    return jsonify(couts_data), 200
+
+@main.route('/couts/<int:cout_id>', methods=['GET'])
+def get_cost(cout_id):
+    # Récupérer le coût par son ID
+    cout = Cout.get_by_id(cout_id)
+    if not cout:
+        return jsonify({'error': 'Coût non trouvé'}), 404
+
+    # Retourner les données du coût sous forme JSON
+    return jsonify(cout.to_dict()), 200
 
 
 # Route pour Créer un Rapport Financier

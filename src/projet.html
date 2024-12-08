@@ -112,6 +112,7 @@
                             <tr>
                                 <td>#</td>
                                 <th>Nom du projet</th>
+                                <th>Budget FCFA</th>
                                 <th>Date debut</th>
                                 <th>Date de fin</th>
                                 <th>Date échéance</th>
@@ -292,6 +293,7 @@
                     const row = `<tr>
                         <td>${startIndex + index + 1}</td>
                         <td>${projet.nom}</td>
+                        <td>${projet.budget_utilise}</td>
                         <!--<td>${projet.objectifs}</td>-->
                         <td>${formatDate(projet.date_debut)}</td>
                         <td>${formatDate(projet.date_fin)}</td>
