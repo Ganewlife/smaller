@@ -379,9 +379,9 @@
 
             // Exporter les projet au format CSV
             function exportTableProjetToCSV() {
-                let csv = '\uFEFFNuméro,Nom Projet,Date début,Date fin,Echéance\n';
+                let csv = '\uFEFFNuméro,Nom Projet,Coût (FCFA), Date début,Date fin,Echéance\n';
                 projets.forEach((projet, index) => {
-                    csv += `${index + 1},"${projet.nom}","${projet.date_debut}",,${projet.date_fin}"${projet.date_echeance === '' ? 'En cours' : 'Finalisé le '+projet.date_echeance}"\n`;
+                    csv += `${index + 1},"${projet.nom}","${projet.budget_utilise}", "${projet.date_debut}",${projet.date_fin}"${projet.date_echeance === '' ? 'En cours' : 'Finalisé le '+projet.date_echeance}"\n`;
                 });
 
                 const blob = new Blob([csv], { type: 'text/csv' });
@@ -401,7 +401,7 @@
 
                 let y = 20;
                 projets.forEach((projet, index) => {
-                    const row = `${index + 1}. ${projet.nom} - ${projet.date_debut}- ${projet.date_fin} - ${projet.date_echeance === '' ? 'En cours' : 'Finalisé le '+projet.date_echeance} `;
+                    const row = `${index + 1}. ${projet.nom} -${projet.budget_utilise} - ${projet.date_debut}- ${projet.date_fin} - ${projet.date_echeance === '' ? 'En cours' : 'Finalisé le '+projet.date_echeance} `;
                     doc.text(row, 10, y);
                     y += 10;
                 });

@@ -1582,6 +1582,7 @@ def get_taches_projet(projet_id):
         if not projet:
                 abort(404, description="Aucune tâche trouvée pour ce projet.")
         result = []
+        nom_projet = projet.nom
         
         for tache in projet.taches:
             membres = [{'id': membre.id, 'nom': membre.nom, 'prenom': membre.prenom, 'fullname': membre.prenom +' '+membre.nom} for membre in tache.membres]
@@ -1604,7 +1605,11 @@ def get_taches_projet(projet_id):
                 'membres': membres
             })
         
-        return jsonify(result)
+        # return jsonify(result)
+        return jsonify({
+            "nom_projet": nom_projet,
+            "taches": result
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 

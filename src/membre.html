@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+p<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -11,9 +11,8 @@
     
     <!-- Toastr CSS -->
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css"/> -->
-    
+    <script src="renderer/ajax_libs_jspdf_2.4.0_jspdf.umd.min.js" defer></script>
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>
@@ -154,18 +153,32 @@
         <!-- Liste des Membres -->
         <div class="card my-4">
             <div class="card-heade d-flex justify-content-between align-items-center">
-                <h5>Liste des Membres</h5>
+                <p class="m-2">
+                    <input class="form-control type="text" id="searchMembresInput" placeholder="Rechercher Membres">
+                </p>
                 <button class="btn btn-primary m-2" onclick="window.api.showStatutModal()">Ajouter un Statut</button>
                 <button class="btn btn-primary m-2" onclick="window.api.showCategorieModal()">Ajouter une Catégorie</button>
                 <button class="btn btn-primary m-2" onclick="window.api.showMembreModal()">Ajouter un Membre</button>
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        Exporter
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                        <li><a class="dropdown-item" onclick="exportTableMembreToPDF()">En PDF</a></li>
+                        <li><a class="dropdown-item" onclick="exportTableMembreToCSV()">En CSV</a></li>
+                    </ul>
+                </div>
             </div>
+            <!-- <div class="card-heade d-flex justify-content-between align-items-center">
+                <input class="form-control type="text" id="searchMembresInput" placeholder="Rechercher Membres">
+            </div> -->
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Nom</th>
-                                <th>Prénom</th>
+                                <th>#</th>
+                                <th>Nom & Prénoms</th>
                                 <th>Email</th>
                                 <th>Téléphone</th>
                                 <th>Catégorie</th>
@@ -175,6 +188,9 @@
                         </thead>
                         <tbody id="membresTable"></tbody>
                     </table>
+                    <nav aria-label="paginationMembres">
+                        <ul class="pagination justify-content-center" id="paginationMembres"></ul>
+                    </nav>
                 </div>
                 
             </div>
@@ -184,13 +200,18 @@
     </div>
 
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script> -->
+    <script src="renderer/ajax_libs_bootstrap_5.3.0_js_bootstrap.bundle.min.js"></script>
 
     <!-- Renderer JS -->
     <!-- <script src="renderer/renderer.js" defer></script> -->
     <script defer>
         (() => {
             const apiBaseUrl = 'http://localhost:5000/api'; // URL de base du backend Flask
+            const itemsPerPage = 5;
+            let currentPage = 1;
+            const pageSize = 20;
+            let membres = [];
 
             // Fonction pour charger les catégories et remplir la liste déroulante
             async function loadCategoriesList() {
@@ -230,33 +251,164 @@
                 }
             }
 
-            // Fonction pour charger tous les membres
+            // Charger les dons disponibles pour l'affichage avec filtres et pagination
             async function loadMembres() {
                 try {
                     const response = await fetch(`${apiBaseUrl}/all_membres`);
-                    const membres = await response.json();
-                    const tableBody = document.getElementById('membresTable');
-                    tableBody.innerHTML = '';
+                    membres = await response.json();
+                    console.log("return des membres...",membres);
+                    // Vérifier si `membres` est bien un tableau
+                    if (!Array.isArray(membres)) {
+                        console.error("Données reçues ne sont pas un tableau:", membres);
+                        membres = [];
+                    }
 
-                    membres.forEach(membre => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${membre.nom}</td>
-                            <td>${membre.prenom}</td>
-                            <td>${membre.email}</td>
-                            <td>${membre.telephone}</td>
-                            <td>${membre.categorie}</td>
-                            <td>${membre.statut}</td>
-                            <td>
-                                <button class="btn btn-warning btn-sm" onclick="window.api.loadMembreForUpdate(${membre.id})">Modifier</button>
-                                <button class="btn btn-danger btn-sm" onclick="window.api.deactivateMembre(${membre.id})">Supprimer</button>
-                            </td>
-                        `;
-                        tableBody.appendChild(row);
-                    });
+                    displayMembres();
                 } catch (error) {
-                    console.error('Erreur lors du chargement des membres:', error);
+                    console.error("Erreur de chargement des membres:", error);
                 }
+            }
+
+            document.getElementById('searchMembresInput').addEventListener('input', () => {
+                currentPage = 1;  // Réinitialise la pagination à la première page de don lors de la recherche
+                displayMembres();
+            });
+
+            // Afficher les projets avec pagination et filtres
+            function displayMembres() {
+                console.log("display des membres...",membres);
+                const tableBody = document.getElementById('membresTable');
+                tableBody.innerHTML = '';
+
+                // Application des filtres
+                const searchInput = document.getElementById('searchMembresInput').value.toLowerCase();
+
+                let filteredMembres = membres.filter(membre => {
+                    const nom = membre.nom.toLowerCase();
+                    const prenom = membre.prenom.toLowerCase();
+                    const email = membre.email.toLowerCase();
+                    const telephone = membre.telephone.toLowerCase();
+                    const categorie = membre.categorie.toLowerCase();
+                    const statut = membre.statut.toLowerCase();
+                    return nom.includes(searchInput) || prenom.includes(searchInput) || email.includes(searchInput) || telephone.includes(searchInput) || categorie.includes(searchInput) || statut.includes(searchInput);
+                });
+
+                // Pagination
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const paginatedMembres = filteredMembres.slice(startIndex, startIndex + itemsPerPage);
+
+                paginatedMembres.forEach((membre, index) => {
+                    const row = `<tr>
+                        <td>${startIndex + index + 1}</td>
+                        <td>${membre.nom} ${membre.prenom}</td>
+                        <!-- <td>${membre.prenom}</td> -->
+                        <td>${membre.email}</td>
+                        <td>${membre.telephone}</td>
+                        <td>${membre.categorie}</td>
+                        <td>${membre.statut}</td>
+                        <td cmass="d-flex"> 
+                            <button class="btn btn-warning btn-sm" onclick="window.api.loadMembreForUpdate(${membre.id})">Modifier</button>
+                            <button class="btn btn-danger btn-sm" onclick="window.api.deactivateMembre(${membre.id})">Supprimer</button>
+                        </td>
+                    </tr>`;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+
+                setupPaginationMembres(filteredMembres.length);
+            }
+
+            function setupPaginationMembres(totalItems) {
+                const pagination = document.getElementById('paginationMembres');
+                pagination.innerHTML = '';
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+                const maxVisiblePages = 5; // Nombre de boutons visibles autour de la page courante
+
+                // Bouton Précédent
+                if (currentPage > 1) {
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageMembres(${currentPage - 1})">Précédent</a>
+                    </li>`);
+                }
+
+                // Calcul des limites d'affichage
+                let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+                // Ajustement si on est proche des limites
+                if (endPage - startPage < maxVisiblePages - 1) {
+                    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+
+                // Bouton pour la première page
+                if (startPage > 1) {
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageMembres(1)">1</a>
+                    </li>`);
+                    if (startPage > 2) {
+                        pagination.insertAdjacentHTML('beforeend', `<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                    }
+                }
+
+                // Boutons pour les pages de membres visibles
+                for (let i = startPage; i <= endPage; i++) {
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" onclick="changePageMembres(${i})">${i}</a>
+                    </li>`);
+                }
+
+                // Bouton pour la dernière page de projet
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                        pagination.insertAdjacentHTML('beforeend', `<li class="page-item disabled"><span class="page-link">...</span></li>`);
+                    }
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageMembres(${totalPages})">${totalPages}</a>
+                    </li>`);
+                }
+
+                // Bouton Suivant de don
+                if (currentPage < totalPages) {
+                    pagination.insertAdjacentHTML('beforeend', `<li class="page-item">
+                        <a class="page-link" onclick="changePageMembres(${currentPage + 1})">Suivant</a>
+                    </li>`);
+                }
+            }
+
+            function changePageMembres(page) {
+                currentPage = page;
+                displayMembres();
+            }
+
+            // Exporter les projet au format CSV
+            function exportTableMembreToCSV() {
+                let csv = '\uFEFFNuméro,Nom complet, email, Téléphone, Catégorie, Statut\n';
+                membres.forEach((membre, index) => {
+                    csv += `${index + 1},"${membre.nom}","${membre.prenom}", "${membre.email}","${membre.telephone}", "${membre.catgorie}", "${membre.statut}"\n`;
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'membres.csv';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+
+            // Exporter les projet au format PDF
+            function exportTableMembreToPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text("Liste des projet", 10, 10);
+
+                let y = 20;
+                membres.forEach((membre, index) => {
+                    const row = `${index + 1}. ${membre.nom} -${membre.prenom} - ${membre.email}- ${membre.telephone} - ${membre.categorie} - ${membre.statut} `;
+                    doc.text(row, 10, y);
+                    y += 10;
+                });
+
+                doc.save("membres.pdf");
             }
 
             // Fonction pour ajouter ou mettre à jour un membre
@@ -451,7 +603,9 @@
                 loadMembres();
             });
 
-
+            window.changePageMembres = changePageMembres;
+            window.exportTableMembreToCSV = exportTableMembreToCSV;
+            window.exportTableMembreToPDF = exportTableMembreToPDF;
             // Exposer les fonctions nécessaires globalement
             window.api = {
                 loadMembreForUpdate,

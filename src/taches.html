@@ -1,4 +1,4 @@
-div<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -48,6 +48,19 @@ div<!DOCTYPE html>
         </nav>
     </header>
     <div class="container-fluid mt-4">
+        <div class="card-heade d-flex justify-content-between align-items-right">
+            <!-- <input class="form-control type="text" id="searchProjetsInput" placeholder="Rechercher projet"> -->
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Exporter
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                    <li><a class="dropdown-item" onclick="exportTableTacheToPDF()">En PDF</a></li>
+                    <li><a class="dropdown-item" onclick="exportTableTacheToCSV()">En CSV</a></li>
+                </ul>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-12">
                 <div class="d-flex flex-row overflow-auto" style="gap: 1rem;">  
@@ -212,7 +225,6 @@ div<!DOCTYPE html>
     </div>
     
     
-
     <style>
         .container-fluid {
         padding: 0 15px;
@@ -269,6 +281,7 @@ div<!DOCTYPE html>
             window.addEventListener('resize', adjustCardBodyHeight);
 
             const apiBaseUrl = 'http://localhost:5000/api';
+            let nom_projet = ''
             let globalEventId = null
             let membres = []
             let tasks = [];
@@ -296,7 +309,9 @@ div<!DOCTYPE html>
                 try {
                     projet_id = await window.api.getProjetId();
                     const response = await fetch(`${apiBaseUrl}/projets/${projet_id}/taches`);
-                    tasks = await response.json();
+                    data = await response.json();
+                    tasks = data.taches;
+                    nom_projet = data.nom_projet;
 
                     // Vérifier si `dons` est bien un tableau
                     if (!Array.isArray(tasks)) {
@@ -459,7 +474,7 @@ div<!DOCTYPE html>
                 // HTML structuré pour le rendu
                 card.innerHTML = `
                     <div class="card-body">
-                        <div class="task-title mb-2 text-truncate" style="max-width: 100%;" title='${task.nom}'>
+                        <div class="task-title mb-2 text-truncate" style="max-width: 100%; cursor: pointer;" title='${task.nom}'>
                             <strong>${task.nom}</strong>
                         </div>
 
@@ -672,7 +687,7 @@ div<!DOCTYPE html>
                 const initialValue = element.textContent;
                 const input = type === "textarea" ? document.createElement("textarea") : document.createElement("input");
                 if (type === "textarea") {
-                    element.setAttribute("rows", "4");
+                    element.setAttribute("rows", "5");
                 }
                 
                 input.value = initialValue;
@@ -1102,6 +1117,38 @@ div<!DOCTYPE html>
                     }
                 });
             });
+
+            // Exporter les projet au format CSV
+            function exportTableTacheToCSV() {
+                let csv = '\uFEFFNuméro,Tâche ,Coût ,Statut \n';
+                tasks.forEach((task, index) => {
+                    csv += `${index + 1},"${task.nom}","${task.cout_total}","${task.statut}"\n`;
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'taches.csv';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+
+            // Exporter les projet au format PDF
+            function exportTableTacheToPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text("Liste des tâches du projet : ${nom_projet}", 10, 10);
+
+                let y = 20;
+                tasks.forEach((task, index) => {
+                    const row = `${index + 1}. ${task.nom} - ${task.cout_total}- ${task.statut}`;
+                    doc.text(row, 10, y);
+                    y += 10;
+                });
+
+                doc.save("taches.pdf");
+            }
             
             // Gérer le clic sur le bouton "Annuler"
             document.getElementById("cancel-button").addEventListener("click", resetForm);
@@ -1117,6 +1164,8 @@ div<!DOCTYPE html>
             window.closeTaskDetails = closeTaskDetails;
             window.makeEditable = makeEditable;
             window.editCost = editCost;
+            window.exportTableTacheToCSV = exportTableTacheToCSV;
+            window.exportTableTacheToPDF = exportTableTacheToPDF;
 
             // Initialisation de l'application
             initializeGlobalEventId();

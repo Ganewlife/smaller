@@ -907,6 +907,8 @@ class Budget(BaseModel):
     
     # Foreign Key vers Budget
     budget_id = db.Column(db.Integer, db.ForeignKey('budgets.id'), nullable=False) """
+    
+    
 class RapportFinancier(BaseModel):
     __tablename__ = 'rapports_financiers'
 
