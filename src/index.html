@@ -17,264 +17,51 @@
 </head>
 <body>
     <header>
-        <nav>
-            <ul>
-                <li><a href="index.html">Accueil</a></li>
-                <li><a href="login.html">Connexion</a></li>
-                <li><a href="membre.html">Membres</a></li>
-                <li><a href="dashboard.html">Tableau de bord</a></li>
-                <li><a href="categorie.html">Catégorie</a></li>
-                <li><a href="statut.html">Statuts</a></li>
-                <li><a href="donateur.html">Donateurs</a></li>
-                <li><a href="projet.html">Projet</a></li>
-                <li><a href="evenement.html">Evenements</a></li>
-            </ul>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="index.html">Assopilot</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="login.html">Connexion</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="admin.html">Admin</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="membre.html">Membres</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="categorie.html">Catégories</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="statut.html">Statut</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="donateur.html">Donateur</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="projet.html">Projet</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="evenement.html">Evenement</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </nav>
     </header>
     <div class="container mt-5">
-        <h1 class="text-center mb-4">Gestion des Membres, Catégories et Statuts</h1>
+        <h1 class="text-center mb-4">YOU ARE WELCOME TO ASSOPILOT</h1>
 
-        <!-- Notification -->
-        <div id="notification" class="alert alert-info d-none" role="alert"></div>
-
-        <!-- Formulaire de connexion Admin -->
-        <div class="card my-4">
-            <div class="card-header">
-                Connexion Admin
-            </div>
-            <div class="card-body">
-                <form id="login-form">
-                    <div class="mb-3">
-                        <label for="login-username" class="form-label">Nom d'utilisateur</label>
-                        <input type="text" class="form-control" id="login-username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="login-password" class="form-label">Mot de passe</label>
-                        <input type="password" class="form-control" id="login-password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Connexion</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Formulaire de création Admin -->
-        <div class="card my-4">
-            <div class="card-header">
-                Créer un nouvel Admin
-            </div>
-            <div class="card-body">
-                <form id="create-admin-form">
-                    <div class="mb-3">
-                        <label for="admin-username" class="form-label">Nom d'utilisateur</label>
-                        <input type="text" class="form-control" id="admin-username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="admin-password" class="form-label">Mot de passe</label>
-                        <input type="password" class="form-control" id="admin-password" required>
-                    </div>
-                    <button type="submit" class="btn btn-success">Créer Admin</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Liste des Administrateurs -->
-        <div class="card my-4">
-            <div class="card-header">
-                Liste des Administrateurs
-            </div>
-            <div class="card-body">
-                <ul id="admin-list" class="list-group">
-                    <!-- Liste des admins chargée dynamiquement ici -->
-                </ul>
-            </div>
-        </div>
-
-        <!-- Formulaire de modification de mot de passe Admin -->
-        <div class="card my-4">
-            <div class="card-header">
-                Modifier Mot de Passe Admin
-            </div>
-            <div class="card-body">
-                <form id="change-password-form">
-                    <div class="mb-3">
-                        <label for="new-password" class="form-label">Nouveau mot de passe</label>
-                        <input type="password" class="form-control" id="new-password" required>
-                    </div>
-                    <button type="submit" class="btn btn-warning">Modifier Mot de Passe</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Formulaire de Catégorie -->
-        <div class="card my-4">
-            <div class="card-header">Ajouter/Modifier une Catégorie</div>
-            <div class="card-body">
-                <form id="categorie-form">
-                    <input type="hidden" id="categorie-id">
-                    <div class="mb-3">
-                        <label for="categorie-nom" class="form-label">Nom de la Catégorie</label>
-                        <input type="text" class="form-control" id="categorie-nom" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="categorie-description" class="form-label">Description</label>
-                        <input type="text" class="form-control" id="categorie-description" required>
-                    </div>
-                    <button type="submit" class="btn btn-success">Enregistrer Catégorie</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Liste des Catégories -->
-        <div class="card my-4">
-            <div class="card-header">Liste des Catégories</div>
-            <div class="card-body">
-                <ul id="categorie-list" class="list-group">
-                    <!-- Catégories chargées dynamiquement -->
-                </ul>
-            </div>
-        </div>
-
-        <!-- Formulaire de Statut -->
-        <div class="card my-4">
-            <div class="card-header">Ajouter/Modifier un Statut</div>
-            <div class="card-body">
-                <form id="statut-form">
-                    <input type="hidden" id="statut-id">
-                    <div class="mb-3">
-                        <label for="statut-nom" class="form-label">Nom du Statut</label>
-                        <input type="text" class="form-control" id="statut-nom" required>
-                    </div>
-                    <button type="submit" class="btn btn-success">Enregistrer Statut</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Liste des Statuts -->
-        <div class="card my-4">
-            <div class="card-header">Liste des Statuts</div>
-            <div class="card-body">
-                <ul id="statut-list" class="list-group">
-                    <!-- Statuts chargés dynamiquement -->
-                </ul>
-            </div>
-        </div>
-
-        <!-- Formulaire de Membre -->
-        <div class="card my-4">
-            <div class="card-header">Ajouter/Modifier un Membre</div>
-            <div class="card-body">
-                <form id="membre-form">
-                    <input type="hidden" id="membre-id">
-                    <div class="mb-3">
-                        <label for="membre-nom" class="form-label">Nom</label>
-                        <input type="text" class="form-control" id="membre-nom" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="membre-prenom" class="form-label">Prénom</label>
-                        <input type="text" class="form-control" id="membre-prenom" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="membre-email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="membre-email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="membre-telephone" class="form-label">Téléphone</label>
-                        <input type="text" class="form-control" id="membre-telephone">
-                    </div>
-                    <div class="mb-3">
-                        <label for="membre-date-naissance" class="form-label">Date de Naissance</label>
-                        <input type="date" class="form-control" id="membre-date-naissance">
-                    </div>
-                    <div class="mb-3">
-                        <label for="membre-categorie" class="form-label">Catégorie</label>
-                        <select class="form-select" id="membre-categorie" required></select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="membre-statut" class="form-label">Statut</label>
-                        <select class="form-select" id="membre-statut" required></select>
-                    </div>
-                    <button type="submit" class="btn btn-success">Enregistrer Membre</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Liste des Membres -->
-        <div class="card my-4">
-            <div class="card-header">Liste des Membres</div>
-            <div class="card-body">
-                <ul id="membre-list" class="list-group">
-                    <!-- Membres chargés dynamiquement -->
-                </ul>
-            </div>
-        </div>
-
-        
-        <h2>Formulaire de présence</h2>
-        <form id="presence-form">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Email</th>
-                        <th>Présence</th>
-                    </tr>
-                </thead>
-                <tbody id="participant-list">
-                    <!-- Les participants validés seront ajoutés ici -->
-                </tbody>
-            </table>
-            <button type="submit" class="btn btn-primary">Enregistrer la présence</button>
-        </form>
-        
-        <section>
-            <h2>Participations du membre</h2>
-            <table class="table table-bordered" id="participations-table">
-                <thead>
-                    <tr>
-                        <th>Événement</th>
-                        <th>Date</th>
-                        <th>Lieu</th>
-                        <th>Présence</th>
-                    </tr>
-                </thead>
-                <tbody id="participations-body">
-                </tbody>
-            </table>
-        </section>
-
-        <section>
-            <h2>Formulaire HTML pour Créer un Procès-Verbal avec Téléversement</h2>
-            <form id="proces-verbal-form" enctype="multipart/form-data">
-                <label for="titre">Titre:</label>
-                <input type="text" id="titre" name="titre" required>
-                
-                <label for="date-reunion">Date de la réunion:</label>
-                <input type="date" id="date-reunion" name="date_reunion" required>
-                
-                <label for="contenu">Contenu:</label>
-                <textarea id="contenu" name="contenu" required></textarea>
-                
-                <label for="document">Document (PDF):</label>
-                <input type="file" id="document" name="document" required>
-                
-                <button type="submit">Créer Procès-Verbal</button>
-            </form>
-            
-            <!-- Liste des procès-verbaux avec option de téléchargement -->
-            <ul id="proces-verbal-list"></ul>
-        </section>
-
-        
         
     </div>
 
-    <!-- Bootstrap 5 JS -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> -->
-
-    <!-- Toastr JS -->
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script> -->
-
-    <!-- Renderer JS -->
-    <script src="renderer/renderer.js"></script>
 </body>
 </html>

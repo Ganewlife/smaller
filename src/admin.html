@@ -26,22 +26,19 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav">
                         <li class="nav-item">
-                            <a class="nav-link" href="admin.html">Admin</a>
+                            <a class="nav-link" href="index.html">Accueil</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="login.html">Connexion</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="membre.html">Membres</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="donateur.html">Donateurs</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="evenement.html">Evénéments</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="projet.html">Projets</a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link" href="dashboard.html">Tableau de bord</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" ondblclick="deconnexion()">Deconnexion</a>
                         </li>
                     </ul>
                 </div>
@@ -49,48 +46,36 @@
         </nav>
     </header>
     <div class="container mt-5">
-        <h1 class="text-center mb-4">Connexion</h1>
+        <h1 class="text-center mb-4">Administrateur</h1>
 
         <!-- Notification -->
         <div id="notification" class="alert alert-info d-none" role="alert"></div>
 
-        <!-- Formulaire de connexion Admin -->
+        <!-- Formulaire de modification de mot de passe Admin -->
         <div class="card my-4">
             <div class="card-header">
-                Connexion Admin
+                Modifier Mot de Passe Admin
             </div>
             <div class="card-body">
-                <form id="login-form">
+                <form id="change-password-form">
                     <div class="mb-3">
-                        <label for="login-username" class="form-label">Nom d'utilisateur</label>
-                        <input type="text" class="form-control" id="login-username" required>
+                        <label for="new-password" class="form-label">Nouveau mot de passe</label>
+                        <input type="password" class="form-control" id="new-password" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="login-password" class="form-label">Mot de passe</label>
-                        <input type="password" class="form-control" id="login-password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Connexion</button>
+                    <button type="submit" class="btn btn-warning">Modifier Mot de Passe</button>
                 </form>
             </div>
         </div>
 
-        <!-- Formulaire de création Admin -->
+        <!-- Liste des Administrateurs -->
         <div class="card my-4">
             <div class="card-header">
-                Créer un nouvel Admin
+                Liste des Administrateurs
             </div>
             <div class="card-body">
-                <form id="create-admin-form">
-                    <div class="mb-3">
-                        <label for="admin-username" class="form-label">Nom d'utilisateur</label>
-                        <input type="text" class="form-control" id="admin-username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="admin-password" class="form-label">Mot de passe</label>
-                        <input type="password" class="form-control" id="admin-password" required>
-                    </div>
-                    <button type="submit" class="btn btn-success">Créer Admin</button>
-                </form>
+                <ul id="admin-list" class="list-group">
+                    <!-- Liste des admins chargée dynamiquement ici -->
+                </ul>
             </div>
         </div>
 
@@ -113,56 +98,75 @@
             }
 
             // Gestion administrateur
-            const loginForm = document.getElementById('login-form');
-            const createAdminForm = document.getElementById('create-admin-form');
+            const changePasswordForm = document.getElementById('change-password-form');
 
-            // Connexion Admin
-            loginForm.onsubmit = function(event) {
+            // Modifier le mot de passe d'un Admin
+            changePasswordForm.onsubmit = function(event) {
                 event.preventDefault();
-                const username = document.getElementById('login-username').value;
-                const password = document.getElementById('login-password').value;
+                const newPassword = document.getElementById('new-password').value;
 
-                fetch(`${API_URL}/admin/login`, {
+                fetch(`${API_URL}/admin/change_password`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: newPassword })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Erreur lors du changement de mot de passe');
+                    return response.json();
+                })
+                .then(() => {
+                    showNotification('Mot de passe modifié avec succès !', 'success');
+                    changePasswordForm.reset();
+                })
+                .catch(error => {
+                    showNotification(error.message, 'danger');
+                });
+            };
+
+            // Charger la liste des administrateurs
+            function loadAdminList() {
+                return fetch(`${API_URL}/admin/list`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const adminList = document.getElementById('admin-list');
+                    adminList.innerHTML = '';  // Vider la liste avant de la recharger
+
+                    data.forEach(admin => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item';
+                        li.textContent = `${admin.username} (ID: ${admin.id})`;
+                        adminList.appendChild(li);
+                    });
+                })
+                .catch(error => {
+                    showNotification('Erreur lors du chargement de la liste des admins', 'danger');
+                });
+            }
+
+            function deconnexion() {
+                event.preventDefault();
+                fetch(`${API_URL}/admin/logout`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({})
                 })
                 .then(response => {
                     if (!response.ok) throw new Error('Identifiants invalides');
                     return response.json();
                 })
                 .then(data => {
-                    document.getElementById('login-form').reset()
-                    showNotification('Connexion réussie !', 'success');
+                    showNotification('deconnexion réussie !', 'success');
                 })
                 .catch(error => {
                     showNotification(error.message, 'danger');
                 });
             };
-
-            // Création d'un nouvel Admin
-            createAdminForm.onsubmit = function(event) {
-                event.preventDefault();
-                const username = document.getElementById('admin-username').value;
-                const password = document.getElementById('admin-password').value;
-
-                fetch(`${API_URL}/admins`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error('Erreur lors de la création');
-                    return response.json();
-                })
-                .then(() => {
-                    showNotification('Admin créé avec succès !', 'success');
-                    createAdminForm.reset();
-                })
-                .catch(error => {
-                    showNotification(error.message, 'danger');
-                });
-            };
+            loadAdminList();
         });
     </script>
 </body>

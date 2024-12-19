@@ -94,7 +94,7 @@ def login():
     
     return response
 
-
+@token_required
 @main.route('/admin/logout', methods=['POST'])
 def logout():
     response = make_response(jsonify({'message': 'Déconnexion réussie!'}))
@@ -102,6 +102,7 @@ def logout():
     return response
 
 # Lire les admins
+@token_required()
 @main.route('/admin/list', methods=['GET'])
 def get_all_admins():
     admins = Admin.get_all()

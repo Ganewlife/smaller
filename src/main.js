@@ -4,9 +4,11 @@ let detailWindow; // Variable pour stocker la fenêtre des détails
 let detailProjetWindow;
 
 function createWindow() {
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width, height } = primaryDisplay.workAreaSize;
     const win = new BrowserWindow({
-        width: 900,
-        height: 600,
+        width: width,
+        height: height,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: false, // Active le contexte isolé
@@ -19,13 +21,15 @@ function createWindow() {
 
 // Fonction pour créer la fenêtre de détails evenement
 function createDetailWindow(eventId) {
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width, height } = primaryDisplay.workAreaSize;
     if (detailWindow) {
         // detailWindow.focus();
         detailWindow.on('closed', () => {
             // Une fois la fenêtre fermée, créez une nouvelle fenêtre
             detailWindow = new BrowserWindow({
-                width: 800,
-                height: 600,
+                width: width,
+                height: height,
                 webPreferences: {
                     preload: path.join(__dirname, 'preload.js'),
                     contextIsolation: true, // Assurez-vous que c'est activé
@@ -47,8 +51,8 @@ function createDetailWindow(eventId) {
         detailWindow.close();
     } else {
         detailWindow = new BrowserWindow({
-            width: 800,
-            height: 600,
+            width: width,
+            height: height,
             webPreferences: {
                 preload: path.join(__dirname, 'preload.js'),
                 contextIsolation: true, // Assurez-vous que c'est activé
