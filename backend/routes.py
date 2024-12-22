@@ -94,16 +94,16 @@ def login():
     
     return response
 
-@token_required
 @main.route('/admin/logout', methods=['POST'])
+# @token_required
 def logout():
     response = make_response(jsonify({'message': 'Déconnexion réussie!'}))
     response.delete_cookie('jwt')  # Supprimer le cookie JWT
     return response
 
 # Lire les admins
-@token_required()
 @main.route('/admin/list', methods=['GET'])
+# @token_required
 def get_all_admins():
     admins = Admin.get_all()
     return jsonify([{
@@ -150,6 +150,7 @@ def creer_membres_fictifs(nombre=50):
 
 # Créer un membre
 @main.route('/membres', methods=['POST'])
+# @token_required
 def create_membre():
     """ resultat = creer_membres_fictifs(50)  # crée 50 membres par défaut
     return jsonify({"message": resultat}), 201 """
@@ -185,6 +186,7 @@ def create_membre():
 
 # Lire les membres
 @main.route('/all_membres', methods=['GET'])
+# @token_required
 def get_all_membres():
     membres = Membre.get_all()
     return jsonify([{
@@ -200,6 +202,7 @@ def get_all_membres():
     
 # Lire un membre
 @main.route('/membres/<int:membre_id>', methods=['GET'])
+# @token_required
 def get_membre(membre_id):
     membre = Membre.get_by_id(membre_id)
     if not membre:
@@ -218,6 +221,7 @@ def get_membre(membre_id):
 
 # Mettre à jour un membre
 @main.route('/membres/<int:membre_id>', methods=['PUT'])
+# @token_required
 def update_membre(membre_id):
     membre = Membre.get_by_id(membre_id)
     if not membre:
@@ -256,6 +260,7 @@ def update_membre(membre_id):
 
 # Désactiver un membre
 @main.route('/membres/<int:membre_id>', methods=['DELETE'])
+# @token_required
 def deactivate_membre(membre_id):
     membre = Membre.get_by_id(membre_id)
     if not membre:
@@ -266,6 +271,7 @@ def deactivate_membre(membre_id):
 
 # Réactiver un membre
 @main.route('/membres/<int:membre_id>/reactivate', methods=['PUT'])
+# @token_required
 def reactivate_membre(membre_id):
     membre = Membre.get_by_id(membre_id)
     if not membre:

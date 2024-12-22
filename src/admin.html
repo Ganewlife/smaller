@@ -38,7 +38,8 @@
                             <a class="nav-link" href="dashboard.html">Tableau de bord</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#" ondblclick="deconnexion()">Deconnexion</a>
+                            <a class="nav-link" id="logoutButton" href="#" ondblclick="deconnexion()">Deconnexion</a>
+                            <!-- <button class="btn btn-outline-danger" id="logoutButton">Déconnexion</button> -->
                         </li>
                     </ul>
                 </div>
@@ -166,6 +167,7 @@
                     showNotification(error.message, 'danger');
                 });
             };
+            document.getElementById('logoutButton').addEventListener('click', deconnexion);
             loadAdminList();
         });
     </script>

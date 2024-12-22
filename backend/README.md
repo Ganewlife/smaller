@@ -41,6 +41,7 @@ SECRET_KEY=super-secret-key
 
 ## Initialisez la base de données
 - flask db init
+- flask db-migrate
 - flask db upgrade
 
 ## Activez l'environnement virtuel si cela n'a pas été fait
